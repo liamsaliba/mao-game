@@ -1,3 +1,4 @@
 # Dynamic plugins .dll
 bin/
 node_modules
+package-lock.json

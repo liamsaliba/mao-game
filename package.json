@@ -1,0 +1,13 @@
+{
+  "name": "im-a-messenger",
+  "version": "0.0.0",
+  "description": "Instant Messager",
+  "main": "index.js",
+  "author": "Liam Saliba",
+  "private": true,
+  "license": "BSD",
+  "dependencies": {
+    "express": "^4.15.3",
+    "socket.io": "^2.0.2"
+  }
+}

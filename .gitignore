@@ -1,0 +1,3 @@
+# Dynamic plugins .dll
+bin/
+node_modules

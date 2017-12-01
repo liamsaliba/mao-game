@@ -39,7 +39,7 @@ Object.prototype.getKeyByValue = function(value) {
 };
 
 Array.prototype.remove = function(index) {
-	return this.splice(index, 1);
+	return this.splice(index, 1)[0];
 }
 
 Array.prototype.clean = function() {
@@ -77,6 +77,7 @@ class CardStack {
 	constructor(id) {
 		this.id = id; // used for display
 		this.cards = [];
+		this.clearDisplay();
 	}
 
 	get isEmpty() {
@@ -142,8 +143,7 @@ class CardStack {
 	playCard(index) {
 		if(this.isEmpty) return false; // no cards to play
 		if(index == undefined) index = 0; // just play top of the pile
-		var card = this.cards.shift();
-		console.log(card)
+		var card = this.cards.remove(index);
 		$("#" + this.displayID + " #" + card.displayID).remove();
 		return card;
 	}
@@ -196,7 +196,7 @@ class Card {
 	};
 
 	display(location) {
-		$("#" + location).append($("<li class='animated fadeIn card " + this.colour + "' id=" + this.displayID + ">").html(this.toString()));
+		$("#" + location).append($("<li class='animated fadeInRight card " + this.colour + "' id=" + this.displayID + ">").html(this.toString()));
 	}
 
 	get colour() {
@@ -269,7 +269,7 @@ function parseCard(str) {
 				card = new Card(value, e[1].charAt(0))
 			}
 		}
-	}
+	} // hi baby you remember to put Array.prototype.remove here?
 
 	words.clean();
 	if (words.length == 3) {
@@ -313,6 +313,10 @@ var pile;
 
 function init() {
 	jInput.focus();
+	reset();
+}
+
+function reset() {
 	hands[0] = new CardStack("hand1");
 	deck = new Deck("deck1");
 	pile = new CardStack("pile")
@@ -322,7 +326,14 @@ function init() {
 function executeCommand(str) {
 	sstr = str.striped();
 
+	if(sstr == "reset"){
+		reset();
+		return "Reset the game.";
+	}
+
 	if(sstr == "begin"){
+		reset(); 
+
 		deck.makeDeck();
 		deck.shuffle();
 		hands[0] = deal(hands[0], 5);

@@ -37,6 +37,27 @@ Object.prototype.getKeyByValue = function(value) {
 	return Object.keys(this).find(key => this[key] === value);
 };
 
+
+// shuffles array / deck / hand
+function shuffle(array){
+	var current = array.length, swap, random;
+
+	// While there are elements left to shuffle (!= 0)
+	while (current) {
+
+		// Pick a random remaining element
+		random = Math.floor(Math.random() * current--);
+
+		// Swap with current element
+		swap = array[current];
+		array[current] = array[random];
+		array[random] = swap;
+
+	}
+	return array;
+}
+
+
 // for debugging purposes.
 function constructOutput(str){
 	// hardcoded rule test, cosmetic onlys
@@ -90,17 +111,31 @@ class CardStack {
 		$("#" + this.displayID + " li").remove();
 	}
 
-	sort() {
-		return;
+	shuffle() {
+		this.clearDisplay();
+		shuffle(this.cards);
+		this.display();
 	}
 
-	shuffle() {
-		return;
+	sort() {
+		this.clearDisplay();
+		this.cards.sort(function(a, b) {
+			return a.ID - b.ID
+		});
+		this.display();
+	}
+
+	addCard(card) {
+		this.cards.push(card);
+		card.display(this.displayID);
 	}
 
 	playCard(index) {
-		if(index == undefined) index = 0;
-		card = this.cards.shift(index);		
+		if(this.isEmpty) return false; // no cards to play
+		if(index == undefined) index = 0; // just play top of the pile
+		card = this.cards.shift(index);
+		$("#" + this.displayID + " " + card.id).remove();
+		return card;
 	}
 
 	clear() {
@@ -112,6 +147,7 @@ class CardStack {
 class Deck extends CardStack {
 	constructor(id) {
 		super(id);
+		this.makeDeck();
 	};
 
 	makeDeck() {
@@ -128,8 +164,6 @@ class Deck extends CardStack {
 			this.cards.push(new Card(53));
 			this.cards.push(new Card(54));
 		}
-
-		console.log(this.displayID)
 		// Display cards
 		this.display()
 	}
@@ -172,15 +206,15 @@ class Card {
 		// Joker
 		if (this.joker) return Card.convertValueToNum(this.value);
 		// normal card
-		return Card.convertSuitToNum(this.suit)*13 + Card.convertValueToNum(this.value);
-	};	
+		return (Card.convertSuitToNum(this.suit)*13 + Card.convertValueToNum(this.value));
+	};
 
 	static convertNumToSuit(num){
 		return SUITNUM[num];
 	};
 
 	static convertSuitToNum(suit){
-		return SUITNUM.getKeyByValue(suit);	
+		return Number.parseInt(SUITNUM.getKeyByValue(suit));	
 	};
 
 	static convertNumToValue(num){
@@ -188,7 +222,7 @@ class Card {
 	};
 
 	static convertValueToNum(value){
-		return VALUENUM.getKeyByValue(value)
+		return Number.parseInt(VALUENUM.getKeyByValue(value))
 	}
 }
 
@@ -222,22 +256,11 @@ function parseCard(str) {
 	return words.join(" ")
 }
 
-function dealCard() {
-	//TODO: if deck is empty....
-	//TODO: take ard from deck
-	var deal = new Card();
-	hand.push(deal);
-	displayCard(deal, "hand") // TODO: make hand an object
-	return deal;
-}
 
-function playCard(index) {
-	if(hand.length == 0){return false}; // no cards to play
-	if(index == undefined){index = 0}; // play top of pile
-	card = hand.shift(index);
-	$("#card-" + card.id).remove();
-}
 
+
+
+// HANDLE BUTTTON PRESSES
 
 $("#deal-btn").click(function(){
 	var deal = dealCard();
@@ -270,15 +293,31 @@ $("#input").keyup(function(){
 	
 });
 
-$("#input").focus();
-var hand = new CardStack("1");
-var deck = new Deck("deck1");
 
-deck.makeDeck()
+var hands = [];
+var deck;
+
+function init() {
+	$("#input").focus();
+	hands[0] = new CardStack("1");
+	deck = new Deck("deck1");
+}
+
+
+
 
 
 const socket = io.connect();
 
 socket.on('connect', function(data) {
 	// connect routine
+	socket.emit('join');
 });
+
+
+$(document).ready(function() { init(); })
+
+window.onbeforeunload = function() {
+	socket.emit('leave');
+	socket.disconnect();
+}

@@ -1,0 +1,72 @@
+* {
+	font-family: Helvetica, serif;
+	-webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+	box-sizing: border-box;
+	text-decoration: none;
+	margin: 0;
+	list-style-type: none
+}
+
+span {
+	display: inline-block;
+}
+
+body {
+	margin: 10px;
+	overflow: none;
+}
+
+#console {
+	background: black;
+	color: white;
+}
+
+p {
+	font-size: 20px;
+}
+
+#input {
+	margin: 10px 0;
+	background: #ddd;
+	border: none;
+	font-size: 18px;
+	width: calc(100% - 10px);
+	text-align: center;
+	padding: 5px
+}
+
+#controls {
+	display: inline-block;
+}
+
+#output {
+	text-align: center;
+}
+
+#hand, #deck {
+	border-top: 1px lightgray solid;
+	margin-top: 20px;
+}
+
+.code {
+	color: #aaa;
+}
+
+.card {
+	border-radius: 3px;
+	border: 1px lightgray solid;
+	padding: 3px;
+	display: inline-block;
+	width: 40px;
+}
+
+.red {
+	color: red;
+}
+
+.black {
+	color: black;
+}

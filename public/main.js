@@ -96,7 +96,7 @@ class CardStack {
 		return this.cards.find(function(card2) {
 			return card2.id == card.id
 		});
-	}
+	};
 
 	hasCard(card) {
 		if (card in this.cards)
@@ -142,7 +142,8 @@ class CardStack {
 	playCard(index) {
 		if(this.isEmpty) return false; // no cards to play
 		if(index == undefined) index = 0; // just play top of the pile
-		var card = this.cards.remove(index);
+		var card = this.cards.shift();
+		console.log(card)
 		$("#" + this.displayID + " #" + card.displayID).remove();
 		return card;
 	}

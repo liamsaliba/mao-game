@@ -4,6 +4,7 @@ const SPANPULSE = "<span class='animated infinite pulse'>"
 const SPANBOUNCE = "<span class='animated infinite bounce'>"
 const SPANIN = "<span class='animated fadeIn'>"
 const SPANDEBUG = "<span class='code'>"
+const SPANSUBMITTED = "<span class='submitted'>"
 const BREAK = "<br>";
 
 const HANDSTART = 5;
@@ -57,33 +58,18 @@ function shuffle(array){
 	return array;
 }
 
-
-// for debugging purposes.
-function constructOutput(str){
-	// hardcoded rule test, cosmetic onlys
-	if(str.striped() == "the chairwoman has entered" || str.striped() == "the chair woman has entered") {
-		return SPANDEBUG + str + SPANEND + BREAK + SPANPULSE + "All hail the chairwoman!" + SPANEND;
-	}
-
-	if(str.striped() == "the chairman has entered" || str.striped() == "the chair man has entered") {
-		return SPANDEBUG + str + SPANEND + BREAK + SPANPULSE + "All hail the chairman!" + SPANEND;
-	}
-
-	return SPANDEBUG + parseCard(str) + SPANEND;
-};
-
 const SUITNUM = {0: "H", 1: "D", 2: "C", 3: "S", 4: ""}
 const VALUENUM = {1: "A", 2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9", 10: "10", 11: "J", 12: "Q", 13: "K", 53: "Joker1", 54: "Joker2"}
 // Joker is complicated.
 
 class CardStack {
 	constructor(id) {
-		this.cards = [];
 		this.id = id; // used for display
+		this.cards = [];
 	}
 
 	get isEmpty() {
-		if (this.cards.length = 0)
+		if (this.cards.length == 0)
 			return true;
 	}
 
@@ -133,8 +119,8 @@ class CardStack {
 	playCard(index) {
 		if(this.isEmpty) return false; // no cards to play
 		if(index == undefined) index = 0; // just play top of the pile
-		card = this.cards.shift(index);
-		$("#" + this.displayID + " " + card.id).remove();
+		var card = this.cards.shift(index);
+		$("#" + this.displayID + " #" + card.displayID).remove();
 		return card;
 	}
 
@@ -147,7 +133,6 @@ class CardStack {
 class Deck extends CardStack {
 	constructor(id) {
 		super(id);
-		this.makeDeck();
 	};
 
 	makeDeck() {
@@ -187,7 +172,7 @@ class Card {
 	};
 
 	display(location) {
-		$("#" + location).append($("<li class='animated fadeIn card " + this.colour + "' id='card-" + this.id + "'>").html(this.toString()));
+		$("#" + location).append($("<li class='animated fadeIn card " + this.colour + "' id=" + this.displayID + ">").html(this.toString()));
 	}
 
 	get colour() {
@@ -202,12 +187,16 @@ class Card {
 		return false;
 	}
 
-	get ID() {
+	get id() {
 		// Joker
-		if (this.joker) return Card.convertValueToNum(this.value);
+		if (this.joker) return  Card.convertValueToNum(this.value);
 		// normal card
 		return (Card.convertSuitToNum(this.suit)*13 + Card.convertValueToNum(this.value));
 	};
+
+	get displayID() {
+		return "card-" + this.id;
+	}
 
 	static convertNumToSuit(num){
 		return SUITNUM[num];
@@ -258,54 +247,84 @@ function parseCard(str) {
 
 
 
+const jInput = $("#input")
 
-
-// HANDLE BUTTTON PRESSES
-
-$("#deal-btn").click(function(){
-	var deal = dealCard();
-	$("#output").html(SPANIN + "card dealt: " + deal + SPANEND);
-});
-
-$("#deal-hand-btn").click(function(){
-	for (i = 0; i < HANDSTART; i++){
-		dealCard();
-	}
-	$("#output").html(SPANIN + "hand dealt" + SPANEND);
-});
-
-$("#play-btn").click(function(){
-	var play = playCard();
-	if (!play){
-		$("#output").html(SPANIN + "no cards to be played" + SPANEND);
-		return;
-	}
-	$("#output").html(SPANIN + "card played: " + play + SPANEND);
-});
-
-$("#clear-btn").click(function(){
-	clearHand();
-	$("#output").html(SPANIN + "hand cleared" + SPANEND);
-});
-
-$("#input").keyup(function(){
-	$("#output").html(constructOutput($("#input").val()));
+// submit command
+jInput.keydown(function(e) {
+	// Enter key pressed
 	
+});
+
+// live input
+jInput.keyup(function(e){
+	if (e.keyCode == 13) {
+		e.preventDefault();
+		$("#output").html(SPANSUBMITTED + executeCommand(jInput.val())+ SPANEND);
+		jInput.val("");
+	} else if (e.keyCode in [144, 145, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 16, 17, 18, 19, 20, 33, 34, 35, 36, 37, 38, 39, 40, 45]){return}
+	else {
+		$("#output").html(SPANDEBUG + constructOutput(jInput.val()) + SPANEND);
+	}
 });
 
 
 var hands = [];
 var deck;
+var pile;
 
 function init() {
-	$("#input").focus();
-	hands[0] = new CardStack("1");
+	jInput.focus();
+	hands[0] = new CardStack("hand1");
 	deck = new Deck("deck1");
+	pile = new CardStack("pile")
 }
 
 
+function executeCommand(str) {
+	sstr = str.striped();
 
+	if(sstr == "deal"){
+		return "Dealt cards.";
+	}
+	if(sstr == "begin"){
+		deck.makeDeck();
+		return "Deck made."
+	}
+	if(sstr == "pass"){
+		dealHand(0, 1);
+		return "Card drawn.";
+	}
+	if(sstr == "deal hand"){
+		dealHand(0, 5);
+		return "Hand dealt."
+	}
+	if(sstr == "shuffle deck") {
+		deck.shuffle();
+		return "Shuffled deck.";
+	}
 
+	if(sstr == "the chairwoman has entered" || sstr == "the chair woman has entered") {
+		return str + SPANEND + BREAK + SPANPULSE + "All hail the chairwoman!";
+	}
+
+	if(sstr == "the chairman has entered" || sstr == "the chair man has entered") {
+		return str + SPANEND + BREAK + SPANPULSE + "All hail the chairman!";
+	}
+	return parseCard(str);
+};
+
+// for debugging purposes.
+function constructOutput(str){
+	// hardcoded rule test, cosmetic onlys
+	
+	return str;
+};
+
+function dealHand(hand, start) {
+	for (i = 0; i < start; i++){
+		hands[hand].addCard(deck.playCard());
+	};
+}
 
 const socket = io.connect();
 

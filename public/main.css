@@ -24,27 +24,25 @@ header {
 	margin-bottom: 20px
 }
 
-p {
-	font-size: 20px;
-}
-
 #input {
 	background: #eee;
 	border: none;
-	font-size: 18px;
+	border-bottom: 2px #888 solid;
+	font-size: 24px;
 	width: 100%;
 	text-align: center;
 	padding: 5px;
 }
 
 #controls {
-	display: inline-block;
+	display: none;
 }
 
 #output {
 	text-align: center;
 	background-color: #ccc;
 	padding: 6px;
+	min-height: 60px;
 }
 
 #table {
@@ -55,11 +53,18 @@ p {
 .cardstack {
 	border-top: 1px lightgray solid;
 	margin-bottom: 20px;
-	min-height: 60px;
+	min-height: 50px;
 }
 
 .code {
-	color: #aaa;
+	color: #666;
+	font-style: italic;
+}
+
+.submitted {
+	color: red;
+	font-weight: bold;
+	font-style: italic;
 }
 
 .card {
@@ -70,8 +75,8 @@ p {
 	margin-right: 5px;
 	margin-bottom: 5px;
 	display: inline-block;
-	width: 70px;
-	font-size: 30px
+	width: 75px;
+	font-size: 24px
 }
 
 .red {

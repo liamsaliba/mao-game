@@ -38,6 +38,17 @@ Object.prototype.getKeyByValue = function(value) {
 	return Object.keys(this).find(key => this[key] === value);
 };
 
+Array.prototype.remove = function(index) {
+	return this.splice(index, 1);
+}
+
+Array.prototype.clean = function() {
+	for (let e of this.entries()) {
+		if (e[1] === ""){
+			this.remove(e[0]); // delete ""
+		}
+	}
+}
 
 // shuffles array / deck / hand
 function shuffle(array){
@@ -81,6 +92,18 @@ class CardStack {
 		return "cardstack-" + this.id;
 	}
 
+	getIndex(card) {
+		return this.cards.find(function(card2) {
+			return card2.id == card.id
+		});
+	}
+
+	hasCard(card) {
+		if (card in this.cards)
+			return true;
+		return false;
+	}
+
 	cardAt(index) {
 		return this.cards[index];
 	}
@@ -106,7 +129,7 @@ class CardStack {
 	sort() {
 		this.clearDisplay();
 		this.cards.sort(function(a, b) {
-			return a.ID - b.ID
+			return a.id - b.id
 		});
 		this.display();
 	}
@@ -119,7 +142,7 @@ class CardStack {
 	playCard(index) {
 		if(this.isEmpty) return false; // no cards to play
 		if(index == undefined) index = 0; // just play top of the pile
-		var card = this.cards.shift(index);
+		var card = this.cards.remove(index);
 		$("#" + this.displayID + " #" + card.displayID).remove();
 		return card;
 	}
@@ -163,7 +186,7 @@ class Card {
 		if (this.joker) this.suit == ""; // joker has no suit
 		else if (suit == undefined) this.suit = Card.convertNumToSuit(Math.floor(Math.random()*4))
 		else if (Number.isInteger(suit)) this.suit = Card.convertNumToSuit(suit);
-		else this.suit = suit;
+		else this.suit = suit.toUpperCase();
 	}
 
 	toString() {
@@ -220,7 +243,8 @@ function parseCard(str) {
 	var wordsl = words.map(function(x) {
 		return x.striped();
 	});
-	// process words
+	var card;
+	// process words (enumerate)
 	for (let e of wordsl.entries()) {
 		// if it's a suit
 		if (e[1] in SUITS) {
@@ -233,14 +257,28 @@ function parseCard(str) {
 				if (wordsl[e[0]-2] in VALUES) {
 					value = VALUES[wordsl[e[0]-2]];
 					words[e[0]-2] = value;
+
+					card = new Card(value, e[1].charAt(0))					
 				}
 				// if value without of
 			} else if (wordsl[e[0]-1] in VALUES) {
 				value = VALUES[wordsl[e[0]-1]];
 				words[e[0]-1] = value;
+
+				card = new Card(value, e[1].charAt(0))
 			}
 		}
 	}
+
+	words.clean();
+	if (words.length == 3) {
+		if (words[0] == "play" && card !== undefined){
+			if (hands[0].hasCard(card)){
+				pile.addCard(hands[0].playCard())
+			}
+		}
+	}
+	
 	// TODO: convert to card object
 	return words.join(" ")
 }
@@ -261,7 +299,7 @@ jInput.keyup(function(e){
 		e.preventDefault();
 		$("#output").html(SPANSUBMITTED + executeCommand(jInput.val())+ SPANEND);
 		jInput.val("");
-	} else if (e.keyCode in [144, 145, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 16, 17, 18, 19, 20, 33, 34, 35, 36, 37, 38, 39, 40, 45]){return}
+	} else if (e.keyCode in []){return}
 	else {
 		$("#output").html(SPANDEBUG + constructOutput(jInput.val()) + SPANEND);
 	}
@@ -283,24 +321,33 @@ function init() {
 function executeCommand(str) {
 	sstr = str.striped();
 
-	if(sstr == "deal"){
-		return "Dealt cards.";
-	}
 	if(sstr == "begin"){
 		deck.makeDeck();
-		return "Deck made."
+		deck.shuffle();
+		hands[0] = deal(hands[0], 5);
+		pile = deal(pile, 1);
+
+		return SPANEND + SPANPULSE + "Here begins the game."
 	}
 	if(sstr == "pass"){
-		dealHand(0, 1);
-		return "Card drawn.";
+		hands[0] = deal(hands[0], 1);
+		return "Card drawn by YOU.";
 	}
 	if(sstr == "deal hand"){
-		dealHand(0, 5);
-		return "Hand dealt."
+		hands[0] = deal(hands[0], 5);
+		return "Hand dealt to YOU."
 	}
 	if(sstr == "shuffle deck") {
 		deck.shuffle();
-		return "Shuffled deck.";
+		return "Deck shuffled.";
+	}
+	if(sstr == "sort deck") {
+		deck.sort();
+		return "Deck sorted.";
+	}
+	if(sstr == "sort hand") {
+		hands[0].sort();
+		return "Sorted YOUR hand."
 	}
 
 	if(sstr == "the chairwoman has entered" || sstr == "the chair woman has entered") {
@@ -320,10 +367,11 @@ function constructOutput(str){
 	return str;
 };
 
-function dealHand(hand, start) {
-	for (i = 0; i < start; i++){
-		hands[hand].addCard(deck.playCard());
+function deal(from, num) {
+	for (i = 0; i < num; i++){
+		from.addCard(deck.playCard());
 	};
+	return from;
 }
 
 const socket = io.connect();

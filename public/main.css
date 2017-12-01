@@ -52,7 +52,8 @@ header {
 
 .cardstack {
 	border-top: 1px lightgray solid;
-	margin-bottom: 20px;
+	padding: 5px;
+	padding-bottom: 0px;
 	min-height: 50px;
 }
 
@@ -93,4 +94,8 @@ button {
 
 button:hover {
 	background-color: #fff;
+}
+
+#cardstack-pile {
+	background-color: #fdd;
 }

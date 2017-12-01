@@ -6,11 +6,12 @@ const SPANIN = "<span class='animated fadeIn'>"
 const SPANDEBUG = "<span class='code'>"
 const BREAK = "<br>";
 
+const HANDSTART = 5;
+
 // unused
 var typingTimer;
 
-var deck = []
-var hand = []
+var useJokers = false;
 
 // toString there might be a better way to do this
 const SUITS = {"h": "&hearts;", "heart": "&hearts;", "hearts": "&hearts;",
@@ -23,6 +24,7 @@ const VALUES = {"ace": "A", "a": "A", "k": "K", "king": "K", "q": "Q", "queen": 
 			  "5": "5", "five": "5", "4": "4", "four": "4", "3": "3", "three": "3", 
 			  "2": "2", "two": "2", "joker": "JOKER", "joker1": "JOKER", "joker2": "JOKER"};
 
+// Libraries
 String.prototype.sanitise = function() {
 	return this.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 };
@@ -35,6 +37,7 @@ Object.prototype.getKeyByValue = function(value) {
 	return Object.keys(this).find(key => this[key] === value);
 };
 
+// for debugging purposes.
 function constructOutput(str){
 	// hardcoded rule test, cosmetic onlys
 	if(str.striped() == "the chairwoman has entered" || str.striped() == "the chair woman has entered") {
@@ -48,49 +51,144 @@ function constructOutput(str){
 	return SPANDEBUG + parseCard(str) + SPANEND;
 };
 
-const SUITNUM = {"H": 0, "D": 1, "C": 2, "S": 3, "": 4 };
-const VALUENUM = {"JOKER1": 14, "JOKER2": "15", "K": 13, "Q": 12, "J": 11, "10": 10, "9": 9, "8": 8, 
-				  "7": 7, "6": 6, "5": 5, "4": 4, "3": 3, "2": 2, "A": 1 }
+const SUITNUM = {0: "H", 1: "D", 2: "C", 3: "S", 4: ""}
+const VALUENUM = {1: "A", 2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9", 10: "10", 11: "J", 12: "Q", 13: "K", 53: "Joker1", 54: "Joker2"}
+// Joker is complicated.
+
+class CardStack {
+	constructor(id) {
+		this.cards = [];
+		this.id = id; // used for display
+	}
+
+	get isEmpty() {
+		if (this.cards.length = 0)
+			return true;
+	}
+
+	get length() {
+		return this.cards.length;
+	}
+
+	get displayID() {
+		return "cardstack-" + this.id;
+	}
+
+	cardAt(index) {
+		return this.cards[index];
+	}
+
+	// displays whole hand.
+	display() {
+		var displayID = this.displayID; // 'this' won't work, since it's inside the callback
+		this.cards.forEach(function(card){
+			card.display(displayID);
+		});
+	}
+
+	clearDisplay() {
+		$("#" + this.displayID + " li").remove();
+	}
+
+	sort() {
+		return;
+	}
+
+	shuffle() {
+		return;
+	}
+
+	playCard(index) {
+		if(index == undefined) index = 0;
+		card = this.cards.shift(index);		
+	}
+
+	clear() {
+		this.cards = [];
+		this.clearDisplay();
+	}
+}
+
+class Deck extends CardStack {
+	constructor(id) {
+		super(id);
+	};
+
+	makeDeck() {
+		// clear deck
+		this.clear();
+
+		// Deal Standard Cards
+		for (var s = 0; s < 4; s++) // loop suits
+			for (var v = 1; v < 14; v++) // loop values
+				this.cards.push(new Card(v, s));
+
+		// Deal Jokers, if enabled
+		if(useJokers){
+			this.cards.push(new Card(53));
+			this.cards.push(new Card(54));
+		}
+
+		console.log(this.displayID)
+		// Display cards
+		this.display()
+	}
+}
 
 class Card {
 	constructor(value, suit) {
 		if (value == undefined) this.value = Card.convertNumToValue(Math.ceil(Math.random()*13));
-		else if (value.isInteger()) this.value = Card.convertNumToValue(value);
+		else if (Number.isInteger(value)) this.value = Card.convertNumToValue(value);
 		else this.value = value;
 		
-		if (suit == undefined) this.suit = Card.convertNumToSuit(Math.floor(Math.random()*4))
-		else if (suit.isInteger()) this.suit = Card.convertNumToSuit(suit);
+		if (this.joker) this.suit == ""; // joker has no suit
+		else if (suit == undefined) this.suit = Card.convertNumToSuit(Math.floor(Math.random()*4))
+		else if (Number.isInteger(suit)) this.suit = Card.convertNumToSuit(suit);
 		else this.suit = suit;
 	}
 
 	toString() {
+		if (this.joker) return "Joker";
 		return VALUES[this.value.toLowerCase()] + " " + SUITS[this.suit.toLowerCase()];
 	};
 
+	display(location) {
+		$("#" + location).append($("<li class='animated fadeIn card " + this.colour + "' id='card-" + this.id + "'>").html(this.toString()));
+	}
+
 	get colour() {
-		if (Card.convertSuitToNum(this.suit) in [0,1])
-			return "red"
-		return "black"
+		if (this.suit == "H" || this.suit == "D")
+			return "red";
+		return "black";
+	}
+
+	get joker(){
+		if (this.value == "Joker1" || this.value == "Joker2")
+			return true;
+		return false;
 	}
 
 	get ID() {
+		// Joker
+		if (this.joker) return Card.convertValueToNum(this.value);
+		// normal card
 		return Card.convertSuitToNum(this.suit)*13 + Card.convertValueToNum(this.value);
 	};	
 
 	static convertNumToSuit(num){
-		return SUITNUM.getKeyByValue(num);
+		return SUITNUM[num];
 	};
 
 	static convertSuitToNum(suit){
-		return SUITNUM[suit];
+		return SUITNUM.getKeyByValue(suit);	
 	};
 
 	static convertNumToValue(num){
-		return VALUENUM.getKeyByValue(num)
+		return VALUENUM[num];
 	};
 
 	static convertValueToNum(value){
-		return VALUENUM[value];
+		return VALUENUM.getKeyByValue(value)
 	}
 }
 
@@ -124,28 +222,47 @@ function parseCard(str) {
 	return words.join(" ")
 }
 
-const socket = io.connect();
+function dealCard() {
+	//TODO: if deck is empty....
+	//TODO: take ard from deck
+	var deal = new Card();
+	hand.push(deal);
+	displayCard(deal, "hand") // TODO: make hand an object
+	return deal;
+}
 
-socket.on('connect', function(data) {
-	// connect routine
-});
+function playCard(index) {
+	if(hand.length == 0){return false}; // no cards to play
+	if(index == undefined){index = 0}; // play top of pile
+	card = hand.shift(index);
+	$("#card-" + card.id).remove();
+}
+
 
 $("#deal-btn").click(function(){
-	var deal = new Card()
-	hand.push(deal);
+	var deal = dealCard();
 	$("#output").html(SPANIN + "card dealt: " + deal + SPANEND);
-	$("#hand").append($("<li class='card " + deal.colour + "' id='card-" + deal.id + "'>").html(deal.toString()));
-	console.log("deal clicked")
+});
+
+$("#deal-hand-btn").click(function(){
+	for (i = 0; i < HANDSTART; i++){
+		dealCard();
+	}
+	$("#output").html(SPANIN + "hand dealt" + SPANEND);
 });
 
 $("#play-btn").click(function(){
-	if(hand.length == 0){
+	var play = playCard();
+	if (!play){
 		$("#output").html(SPANIN + "no cards to be played" + SPANEND);
 		return;
 	}
-	var play = hand.shift();
-	$("#output").html(SPANIN + "card played: " + play[0] + SPANEND);
-	console.log("play clicked")
+	$("#output").html(SPANIN + "card played: " + play + SPANEND);
+});
+
+$("#clear-btn").click(function(){
+	clearHand();
+	$("#output").html(SPANIN + "hand cleared" + SPANEND);
 });
 
 $("#input").keyup(function(){
@@ -154,3 +271,14 @@ $("#input").keyup(function(){
 });
 
 $("#input").focus();
+var hand = new CardStack("1");
+var deck = new Deck("deck1");
+
+deck.makeDeck()
+
+
+const socket = io.connect();
+
+socket.on('connect', function(data) {
+	// connect routine
+});

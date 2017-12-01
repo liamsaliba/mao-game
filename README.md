@@ -1,1 +1,2 @@
-# im-2017
+# mao game
+work in progress

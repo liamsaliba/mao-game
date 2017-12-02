@@ -5,6 +5,8 @@ const SPANBOUNCE = "<span class='animated infinite bounce'>"
 const SPANIN = "<span class='animated fadeIn'>"
 const SPANDEBUG = "<span class='code'>"
 const SPANSUBMITTED = "<span class='submitted'>"
+
+const ATTENTIONFMT = SPANEND + SPANPULSE;
 const BREAK = "<br>";
 
 const HANDSTART = 5;
@@ -81,8 +83,7 @@ class CardStack {
 	}
 
 	get isEmpty() {
-		if (this.cards.length == 0)
-			return true;
+		return this.cards.length == 0;
 	}
 
 	get length() {
@@ -94,15 +95,11 @@ class CardStack {
 	}
 
 	getIndex(card) {
-		return this.cards.find(function(card2) {
-			return card2.id == card.id
-		});
+		return this.cards.findIndex(card2 => card2.id === card.id);
 	};
 
 	hasCard(card) {
-		if (card in this.cards)
-			return true;
-		return false;
+		return this.getIndex(card) !== undefined;
 	}
 
 	cardAt(index) {
@@ -115,10 +112,16 @@ class CardStack {
 		this.cards.forEach(function(card){
 			card.display(displayID);
 		});
+		this.displayCount();
+	}
+
+	displayCount() {
+		$("#" + this.displayID + "-count").html("(" + this.length + ")");
 	}
 
 	clearDisplay() {
 		$("#" + this.displayID + " li").remove();
+		$("#" + this.displayID + "-count").html("")
 	}
 
 	shuffle() {
@@ -135,9 +138,16 @@ class CardStack {
 		this.display();
 	}
 
-	addCard(card) {
+	addCardBottom(card) {
 		this.cards.push(card);
-		card.display(this.displayID);
+		card.displayBottom(this.displayID);
+		this.displayCount();
+	}
+
+	addCardTop(card){
+		this.cards.unshift(card);
+		card.displayTop(this.displayID);
+		this.displayCount();
 	}
 
 	playCard(index) {
@@ -145,6 +155,7 @@ class CardStack {
 		if(index == undefined) index = 0; // just play top of the pile
 		var card = this.cards.remove(index);
 		$("#" + this.displayID + " #" + card.displayID).remove();
+		this.displayCount();
 		return card;
 	}
 
@@ -176,6 +187,14 @@ class Deck extends CardStack {
 		// Display cards
 		this.display()
 	}
+
+	// displays whole hand.
+	display() {
+		var displayID = this.displayID; // 'this' won't work, since it's inside the callback
+		this.cards.forEach(function(card){
+			card.displayBottom(displayID, "back");
+		});
+	}
 }
 
 class Card {
@@ -195,8 +214,14 @@ class Card {
 		return VALUES[this.value.toLowerCase()] + " " + SUITS[this.suit.toLowerCase()];
 	};
 
-	display(location) {
-		$("#" + location).append($("<li class='animated fadeInRight card " + this.colour + "' id=" + this.displayID + ">").html(this.toString()));
+	displayBottom(location, displayClass) {
+		if(displayClass === undefined) displayClass = "";
+		$("#" + location).append($("<li class='animated flipInY card " + this.colour + " " + displayClass + "' id=" + this.displayID + ">").html(this.toString()));
+	}
+
+	displayTop(location, displayClass){
+		if(displayClass === undefined) displayClass = "";
+		$("#" + location).prepend($("<li class='animated flipInY card " + this.colour + " " + displayClass + "' id=" + this.displayID + ">").html(this.toString()));
 	}
 
 	get colour() {
@@ -269,14 +294,15 @@ function parseCard(str) {
 				card = new Card(value, e[1].charAt(0))
 			}
 		}
-	} // hi baby you remember to put Array.prototype.remove here?
+	}
 
+	// removes blank spaces
 	words.clean();
+
+	// play logic
 	if (words.length == 3) {
-		if (words[0] == "play" && card !== undefined){
-			if (hands[0].hasCard(card)){
-				pile.addCard(hands[0].playCard())
-			}
+		if (wordsl[0] == "play" && card !== undefined){
+			return attemptPlay(card);
 		}
 	}
 	
@@ -284,6 +310,22 @@ function parseCard(str) {
 	return words.join(" ")
 }
 
+// test
+function attemptPlay(card) {
+	var topCard = pile.cardAt(0);
+
+	if (hands[0].hasCard(card)){
+		if(card.suit == topCard.suit){
+			pile.addCardTop(hands[0].playCard(hands[0].getIndex(card)));
+			return "Played " + card;
+		} else if(card.value == topCard.value){
+			pile.addCardTop(hands[0].playCard(hands[0].getIndex(card)));
+			return "Played " + card;
+		}
+		hands[0] = deal(hands[0], 1);
+		return ATTENTIONFMT + "Penalty for playing an invalid card!";
+	} return "You don't have " + card;
+}
 
 
 const jInput = $("#input")
@@ -324,6 +366,15 @@ function reset() {
 
 
 function executeCommand(str) {
+	var output = [];
+	str.split(", ").forEach(function(piece){
+		output.push(executePiece(piece));
+	});
+	console.log(output)
+	return output.join(BREAK);
+};
+
+function executePiece(str) {
 	sstr = str.striped();
 
 	if(sstr == "reset"){
@@ -332,12 +383,7 @@ function executeCommand(str) {
 	}
 
 	if(sstr == "begin"){
-		reset(); 
-
-		deck.makeDeck();
-		deck.shuffle();
-		hands[0] = deal(hands[0], 5);
-		pile = deal(pile, 1);
+		startGame();
 
 		return SPANEND + SPANPULSE + "Here begins the game."
 	}
@@ -370,7 +416,18 @@ function executeCommand(str) {
 		return str + SPANEND + BREAK + SPANPULSE + "All hail the chairman!";
 	}
 	return parseCard(str);
-};
+}
+
+function startGame() {
+	$("#input").removeAttr('placeholder');
+	
+	reset(); 
+
+	deck.makeDeck();
+	deck.shuffle();
+	hands[0] = deal(hands[0], 5);
+	pile = deal(pile, 1);
+}
 
 // for debugging purposes.
 function constructOutput(str){
@@ -381,7 +438,7 @@ function constructOutput(str){
 
 function deal(from, num) {
 	for (i = 0; i < num; i++){
-		from.addCard(deck.playCard());
+		from.addCardTop(deck.playCard());
 	};
 	return from;
 }

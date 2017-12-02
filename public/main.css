@@ -53,8 +53,9 @@ header {
 .cardstack {
 	border-top: 1px lightgray solid;
 	padding: 5px;
-	padding-bottom: 0px;
+	padding-bottom: 10px;
 	min-height: 50px;
+	text-align: center;
 }
 
 .code {
@@ -77,7 +78,8 @@ header {
 	margin-bottom: 5px;
 	display: inline-block;
 	width: 75px;
-	font-size: 24px
+	font-size: 24px;
+	text-align: left;
 }
 
 .red {
@@ -86,6 +88,10 @@ header {
 
 .black {
 	color: black;
+}
+
+.back {
+	color: rgba(0,0,0,0.1);
 }
 
 button {
@@ -98,4 +104,14 @@ button:hover {
 
 #cardstack-pile {
 	background-color: #fdd;
+}
+
+#cardstack-pile li.card:not(:nth-child(1)) {
+	opacity: 0.2;
+}
+
+h2 {
+	display: inline-block;
+	margin-right: 5px;
+	margin-top: 5px;
 }

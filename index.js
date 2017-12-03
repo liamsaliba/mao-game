@@ -20,6 +20,9 @@ http.listen(PORTNUMBER, function(){
 function l(string) {
 	console.log(new Date().toLocaleString() + " * " + "[" + l.caller.name + "] " + string)
 }
+function c(string) {
+	console.log(new Date().toLocaleString() + " > > " + string)
+}
 function e(string){
 	console.error(new Date().toLocaleString() + " ! " + "[" + e.caller.name + "] " + string)
 }
@@ -33,9 +36,14 @@ function init() {
 var stdin = process.openStdin();
 stdin.addListener("data", function(d) {
 	str = d.toString().trim();
-	l(">>" + str);
+	c(str);
 });
 
 io.on('connection', (socket) => {
-	l("Connected to client");
+	l("Connected to client id=" + socket.id + "");
+
+	socket.on('join', function() {
+		l("Handshake from client id=" + socket.id)
+	});
 })
+

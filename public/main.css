@@ -110,8 +110,21 @@ button:hover {
 	opacity: 0.2;
 }
 
-h2 {
+h1, h2, h3 {
 	display: inline-block;
+}
+
+h2 {
 	margin-right: 5px;
 	margin-top: 5px;
+}
+
+#connection-info {
+	min-height: 5px;
+	background-color: red;
+
+}
+
+.connected {
+	background-color: green !important;
 }

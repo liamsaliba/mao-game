@@ -16,17 +16,6 @@ var typingTimer;
 
 var useJokers = false;
 
-// toString there might be a better way to do this
-const SUITS = {"h": "&hearts;", "heart": "&hearts;", "hearts": "&hearts;",
-			 "s": "&spades;", "spade": "&spades;", "spades": "&spades;",
-			 "d": "&diams;", "diams": "&diams;", "diamond": "&diams;", "diamonds": "&diams;",
-			 "c": "&clubs;", "club": "&clubs;", "clubs": "&clubs;", "": ""};
-const VALUES = {"ace": "A", "a": "A", "k": "K", "king": "K", "q": "Q", "queen": "Q", 
-			  "j": "J", "jack": "J", "10": "10", "ten": "10", "9": "9", "nine": "9", 
-			  "8": "8", "eight": "8", "7": "7", "seven": "7", "6": "6", "six": "6", 
-			  "5": "5", "five": "5", "4": "4", "four": "4", "3": "3", "three": "3", 
-			  "2": "2", "two": "2", "joker": "JOKER", "joker1": "JOKER", "joker2": "JOKER"};
-
 // Libraries
 String.prototype.sanitise = function() {
 	return this.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
@@ -71,10 +60,6 @@ function shuffle(array){
 	return array;
 }
 
-const SUITNUM = {0: "H", 1: "D", 2: "C", 3: "S", 4: ""}
-const VALUENUM = {1: "A", 2: "2", 3: "3", 4: "4", 5: "5", 6: "6", 7: "7", 8: "8", 9: "9", 10: "10", 11: "J", 12: "Q", 13: "K", 53: "Joker1", 54: "Joker2"}
-// Joker is complicated.
-
 class CardStack {
 	constructor(id) {
 		this.id = id; // used for display
@@ -106,14 +91,31 @@ class CardStack {
 		return this.cards[index];
 	}
 
-	// displays whole hand.
-	display() {
-		var displayID = this.displayID; // 'this' won't work, since it's inside the callback
-		this.cards.forEach(function(card){
-			card.display(displayID);
-		});
+	updateDisplay() {
+		$("#" + this.displayID + " li").remove();
+		this.displayHand();
 		this.displayCount();
 	}
+
+	displayCardTop(isFaceDown) {
+		$("#" + this.displayID).prepend(card.toDisplay(isFaceDown));
+		this.displayCount();
+	}
+
+	displayCardBottom(isFaceDown) {
+		$("#" + this.displayID).append(card.toDisplay(isFaceDown));
+		this.displayCount();
+	}
+
+	// displays whole hand.
+	displayHand(isFaceDown) {
+		var el = $("#" + this.displayID);
+		this.cards.forEach(function(card){
+			el.append(card.toDisplay(isFaceDown));
+		});
+	}
+
+	// TODO: possibly add displaySingleCard ? (append & prepend)
 
 	displayCount() {
 		$("#" + this.displayID + "-count").html("(" + this.length + ")");
@@ -125,38 +127,38 @@ class CardStack {
 	}
 
 	shuffle() {
-		this.clearDisplay();
 		shuffle(this.cards);
-		this.display();
+		this.updateDisplay();
 	}
 
 	sort() {
-		this.clearDisplay();
 		this.cards.sort(function(a, b) {
 			return a.id - b.id
 		});
-		this.display();
+		this.updateDisplay();
 	}
 
 	addCardBottom(card) {
 		this.cards.push(card);
-		card.displayBottom(this.displayID);
-		this.displayCount();
+		this.updateDisplay();
 	}
 
 	addCardTop(card){
 		this.cards.unshift(card);
-		card.displayTop(this.displayID);
-		this.displayCount();
+		this.updateDisplay();
 	}
 
-	playCard(index) {
-		if(this.isEmpty) return false; // no cards to play
-		if(index == undefined) index = 0; // just play top of the pile
-		var card = this.cards.remove(index);
+	removeCard(card){
+		card = this.cards.remove(this.getIndex(card));
 		$("#" + this.displayID + " #" + card.displayID).remove();
 		this.displayCount();
 		return card;
+	}
+
+	playCard(card) {
+		if(this.isEmpty) return false; // no cards to play
+		if(card == undefined) card = this.cards[0]; // just play top of the pile
+		return this.removeCard(card);
 	}
 
 	clear() {
@@ -164,6 +166,14 @@ class CardStack {
 		this.clearDisplay();
 	}
 }
+
+function deal(from, num) {
+	for (i = 0; i < num; i++){
+		from.addCardTop(deck.playCard());
+	};
+	return from;
+}
+
 
 class Deck extends CardStack {
 	constructor(id) {
@@ -177,90 +187,90 @@ class Deck extends CardStack {
 		// Deal Standard Cards
 		for (var s = 0; s < 4; s++) // loop suits
 			for (var v = 1; v < 14; v++) // loop values
-				this.cards.push(new Card(v, s));
+				this.cards.push(new Card(values[v], suits[s]));
 
 		// Deal Jokers, if enabled
 		if(useJokers){
-			this.cards.push(new Card(53));
-			this.cards.push(new Card(54));
+			this.cards.push(new Card(values[0], suits[4]));
+			this.cards.push(new Card(values[0], suits[5]));
 		}
 		// Display cards
-		this.display()
+		this.updateDisplay()
 	}
 
 	// displays whole hand.
-	display() {
-		var displayID = this.displayID; // 'this' won't work, since it's inside the callback
-		this.cards.forEach(function(card){
-			card.displayBottom(displayID, "back");
-		});
+	displayHand(isFaceDown) {
+		super.displayHand(true);
 	}
 }
 
+class Value {
+	constructor(name, id, string, aliases) {
+		this.name = name;
+		this.id = id;
+		this.string = string;
+		this.aliases = aliases;
+	}
+	toString() {
+		return this.string;
+	}
+	isAlias(str) {
+		return (str in this.aliases)
+	}
+}
+
+class Suit extends Value {
+	constructor(name, id, string, aliases, colour) {
+		super(name, id, string, aliases)
+		this.colour = colour;
+	}
+}
+
+// red and black card display classes
+const RED = 'red';
+const BLACK = 'black';
+
+var suits = [new Suit("Hearts", 0, "&hearts;", ["h", "heart", "hearts"], RED),
+			 new Suit("Diamonds", 1, "&diams;", ["d", "diams", "diamond", "diamonds"], RED),
+			 new Suit("Clubs", 2, "&clubs;", ["c", "club", "clubs"], BLACK),
+			 new Suit("Spades", 3, "&spades;", ["s", "spade", "spades"], BLACK),
+			 new Suit("Red", 4, "", ["red"], RED), new Suit("Black", 5, "", ["black"], BLACK)
+			];
+
+var values = [new Value("Joker", 0, "JKR", ["joker"]), new Value("Ace", 1, "A", ["ace", "a", "1"]), new Value("2", 2, "2", ["two", "2"]),
+			  new Value("3", 3, "3", ["three", "3"]), new Value("4", 4, "4", ["four", "4"]),
+			  new Value("5", 5, "5", ["five", "5"]), new Value("6", 6, "6", ["six", "6"]),
+			  new Value("7", 7, "7", ["seven", "7"]), new Value("8", 8, "8", ["eight", "8"]),
+			  new Value("9", 9, "9", ["nine", "9"]), new Value("10", 10, "10", ["ten", "10"]),
+			  new Value("Jack", 11, "J", ["jack", "j"]), new Value("Queen", 12, "Q", ["queen", "q"]),
+			  new Value("King", 13, "K", ["king", "k"])
+			 ];
+
 class Card {
 	constructor(value, suit) {
-		if (value == undefined) this.value = Card.convertNumToValue(Math.ceil(Math.random()*13));
-		else if (Number.isInteger(value)) this.value = Card.convertNumToValue(value);
-		else this.value = value;
-		
-		if (this.joker) this.suit == ""; // joker has no suit
-		else if (suit == undefined) this.suit = Card.convertNumToSuit(Math.floor(Math.random()*4))
-		else if (Number.isInteger(suit)) this.suit = Card.convertNumToSuit(suit);
-		else this.suit = suit.toUpperCase();
+		this.value = value;
+		this.suit = suit;
+		console.log(this.value + " " + this.suit);
 	}
 
 	toString() {
-		if (this.joker) return "Joker";
-		return VALUES[this.value.toLowerCase()] + " " + SUITS[this.suit.toLowerCase()];
+		return [this.value, this.suit].join(" ");
 	};
 
-	displayBottom(location, displayClass) {
-		if(displayClass === undefined) displayClass = "";
-		$("#" + location).append($("<li class='animated flipInY card " + this.colour + " " + displayClass + "' id=" + this.displayID + ">").html(this.toString()));
-	}
-
-	displayTop(location, displayClass){
-		if(displayClass === undefined) displayClass = "";
-		$("#" + location).prepend($("<li class='animated flipInY card " + this.colour + " " + displayClass + "' id=" + this.displayID + ">").html(this.toString()));
-	}
-
-	get colour() {
-		if (this.suit == "H" || this.suit == "D")
-			return "red";
-		return "black";
-	}
-
-	get joker(){
-		if (this.value == "Joker1" || this.value == "Joker2")
-			return true;
-		return false;
+	toDisplay(isFaceDown) {
+		var displayClass;
+		if(isFaceDown) displayClass = "back";
+		else displayClass = "";
+		return "<li class='animated flipInY card " + this.suit.colour + " " + displayClass + "' id=" + this.displayID + ">" + this.toString() + "</li>";
 	}
 
 	get id() {
-		// Joker
-		if (this.joker) return  Card.convertValueToNum(this.value);
 		// normal card
-		return (Card.convertSuitToNum(this.suit)*13 + Card.convertValueToNum(this.value));
+		return ((this.suit.id)*13 + (this.value.id));
 	};
 
 	get displayID() {
 		return "card-" + this.id;
-	}
-
-	static convertNumToSuit(num){
-		return SUITNUM[num];
-	};
-
-	static convertSuitToNum(suit){
-		return Number.parseInt(SUITNUM.getKeyByValue(suit));	
-	};
-
-	static convertNumToValue(num){
-		return VALUENUM[num];
-	};
-
-	static convertValueToNum(value){
-		return Number.parseInt(VALUENUM.getKeyByValue(value))
 	}
 }
 
@@ -295,20 +305,36 @@ function init() {
 }
 
 function reset() {
+	// TODO: make objects
+	defaults();
+}
+
+function defaults() {
 	hands[0] = new CardStack("hand1");
 	deck = new Deck("deck1");
 	pile = new CardStack("pile")
 }
 
-
+// executes comma separated commands 
 function executeCommand(str) {
 	var output = [];
 	str.split(", ").forEach(function(piece){
 		output.push(executePiece(piece));
 	});
-	console.log(output)
 	return output.join(BREAK);
 };
+
+
+
+class Command {
+	constructor(aliases, toRun){
+		this.aliases = aliases;
+		this.toRun = toRun;
+	}
+}
+
+
+
 
 function executePiece(str) {
 	sstr = str.striped();
@@ -363,7 +389,7 @@ function parseCard(str) {
 	// process words (enumerate)
 	for (let e of wordsl.entries()) {
 		// if it's a suit
-		if (e[1] in SUITS) {
+		if (e[1] in suits) {
 			suit = SUITS[e[1]];
 			words[e[0]] = suit;
 			// if of
@@ -435,18 +461,18 @@ function constructOutput(str){
 	return str;
 };
 
-function deal(from, num) {
-	for (i = 0; i < num; i++){
-		from.addCardTop(deck.playCard());
-	};
-	return from;
-}
+
 
 const socket = io.connect();
+// connect routine
 
-socket.on('connect', function(data) {
-	// connect routine
+socket.on("connect", function() {
 	socket.emit('join');
+	$("#connection-info").addClass("connected");
+})
+
+socket.on("disconnect", function() {
+	$("#connection-info").removeClass("connected");
 });
 
 
@@ -456,3 +482,7 @@ window.onbeforeunload = function() {
 	socket.emit('leave');
 	socket.disconnect();
 }
+
+socket.on("command", function(data) {
+	executeCommand(data.cmd);
+})

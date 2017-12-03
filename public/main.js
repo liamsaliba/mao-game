@@ -264,70 +264,6 @@ class Card {
 	}
 }
 
-function parseCard(str) {
-	var words = str.sanitise().split(" ");
-	var wordsl = words.map(function(x) {
-		return x.striped();
-	});
-	var card;
-	// process words (enumerate)
-	for (let e of wordsl.entries()) {
-		// if it's a suit
-		if (e[1] in SUITS) {
-			suit = SUITS[e[1]];
-			words[e[0]] = suit;
-			// if of
-			if (wordsl[e[0]-1] == "of") {
-				words[e[0]-1] = "";
-				// if value
-				if (wordsl[e[0]-2] in VALUES) {
-					value = VALUES[wordsl[e[0]-2]];
-					words[e[0]-2] = value;
-
-					card = new Card(value, e[1].charAt(0))					
-				}
-				// if value without of
-			} else if (wordsl[e[0]-1] in VALUES) {
-				value = VALUES[wordsl[e[0]-1]];
-				words[e[0]-1] = value;
-
-				card = new Card(value, e[1].charAt(0))
-			}
-		}
-	}
-
-	// removes blank spaces
-	words.clean();
-
-	// play logic
-	if (words.length == 3) {
-		if (wordsl[0] == "play" && card !== undefined){
-			return attemptPlay(card);
-		}
-	}
-	
-	// TODO: convert to card object
-	return words.join(" ")
-}
-
-// test
-function attemptPlay(card) {
-	var topCard = pile.cardAt(0);
-
-	if (hands[0].hasCard(card)){
-		if(card.suit == topCard.suit){
-			pile.addCardTop(hands[0].playCard(hands[0].getIndex(card)));
-			return "Played " + card;
-		} else if(card.value == topCard.value){
-			pile.addCardTop(hands[0].playCard(hands[0].getIndex(card)));
-			return "Played " + card;
-		}
-		hands[0] = deal(hands[0], 1);
-		return ATTENTIONFMT + "Penalty for playing an invalid card!";
-	} return "You don't have " + card;
-}
-
-
 const jInput = $("#input")
 
 // submit command
@@ -418,9 +354,72 @@ function executePiece(str) {
 	return parseCard(str);
 }
 
+function parseCard(str) {
+	var words = str.sanitise().split(" ");
+	var wordsl = words.map(function(x) {
+		return x.striped();
+	});
+	var card;
+	// process words (enumerate)
+	for (let e of wordsl.entries()) {
+		// if it's a suit
+		if (e[1] in SUITS) {
+			suit = SUITS[e[1]];
+			words[e[0]] = suit;
+			// if of
+			if (wordsl[e[0]-1] == "of") {
+				words[e[0]-1] = "";
+				// if value
+				if (wordsl[e[0]-2] in VALUES) {
+					value = VALUES[wordsl[e[0]-2]];
+					words[e[0]-2] = value;
+
+					card = new Card(value, e[1].charAt(0))					
+				}
+				// if value without of
+			} else if (wordsl[e[0]-1] in VALUES) {
+				value = VALUES[wordsl[e[0]-1]];
+				words[e[0]-1] = value;
+
+				card = new Card(value, e[1].charAt(0))
+			}
+		}
+	}
+
+	// removes blank spaces
+	words.clean();
+
+	// play logic
+	if (words.length == 3) {
+		if (wordsl[0] == "play" && card !== undefined){
+			return attemptPlay(card);
+		}
+	}
+	
+	// TODO: convert to card object
+	return words.join(" ")
+}
+
+// test
+function attemptPlay(card) {
+	var topCard = pile.cardAt(0);
+
+	if (hands[0].hasCard(card)){
+		if(card.suit == topCard.suit){
+			pile.addCardTop(hands[0].playCard(hands[0].getIndex(card)));
+			return "Played " + card;
+		} else if(card.value == topCard.value){
+			pile.addCardTop(hands[0].playCard(hands[0].getIndex(card)));
+			return "Played " + card;
+		}
+		hands[0] = deal(hands[0], 1);
+		return ATTENTIONFMT + "Penalty for playing an invalid card!";
+	} return "You don't have " + card;
+}
+
 function startGame() {
 	$("#input").removeAttr('placeholder');
-	
+
 	reset(); 
 
 	deck.makeDeck();

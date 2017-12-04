@@ -29,6 +29,9 @@ function e(string){
 
 // server start calls
 function init() {
+	setTimeout(function(){
+		io.emit("refresh");
+	}, 1000)
 	l("Server initialised.")
 }
 
@@ -37,7 +40,16 @@ var stdin = process.openStdin();
 stdin.addListener("data", function(d) {
 	str = d.toString().trim();
 	c(str);
+	if(str.charAt(0) == ".")
+		io.emit("command", str.slice(1));
+	else if (str.charAt(0) == "/")
+		io.emit(str.slice(1));
+	else io.emit("broadcast", str);
 });
+
+
+
+
 
 io.on('connection', (socket) => {
 	l("Connected to client id=" + socket.id + "");
@@ -45,5 +57,22 @@ io.on('connection', (socket) => {
 	socket.on('join', function() {
 		l("Handshake from client id=" + socket.id)
 	});
+
+	socket.on("command", function(data) {
+		l("Command from id=" + socket.id + " > " + data);
+	});
 })
 
+class User {
+	constructor(socket) {
+		this.socket = socket;
+	}
+}
+
+class MaoGame {
+	constructor() {
+
+	}
+
+
+}

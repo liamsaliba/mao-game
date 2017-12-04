@@ -7,7 +7,7 @@
 	box-sizing: border-box;
 	text-decoration: none;
 	margin: 0;
-	list-style-type: none
+	list-style-type: none;
 }
 
 span {
@@ -15,13 +15,12 @@ span {
 }
 
 body {
-	margin: 10px;
 	overflow: none;
 	background: #ddd
 }
 
 header {
-	margin-bottom: 20px
+	margin: 10px;
 }
 
 #input {
@@ -34,10 +33,6 @@ header {
 	padding: 5px;
 }
 
-#controls {
-	display: none;
-}
-
 #output {
 	text-align: center;
 	background-color: #ccc;
@@ -46,14 +41,14 @@ header {
 }
 
 #table {
+	margin: 10px;
 	padding: 5px;
-	background-color: #eee
 }
 
 .cardstack {
-	border-top: 1px lightgray solid;
+	background-color: #eee;
+	border-top: 2px #aaa solid;
 	padding: 5px;
-	padding-bottom: 10px;
 	min-height: 50px;
 	text-align: center;
 }
@@ -74,12 +69,12 @@ header {
 	border: 1px lightgray solid;
 	background: white;
 	padding: 3px;
-	margin-right: 5px;
-	margin-bottom: 5px;
+	margin: 3px;
 	display: inline-block;
 	width: 75px;
 	font-size: 24px;
 	text-align: left;
+	cursor: default;
 }
 
 .red {
@@ -122,7 +117,13 @@ h2 {
 #connection-info {
 	min-height: 5px;
 	background-color: red;
+}
 
+#connection-info div {
+	display: inline-block;
+	color: white;
+	font-size: 12px;
+	padding-left: 10px;
 }
 
 .connected {

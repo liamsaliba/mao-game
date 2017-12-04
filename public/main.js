@@ -11,7 +11,7 @@ const BREAK = "<br>";
 
 const HANDSTART = 5;
 
-// unused
+// unuse
 var typingTimer;
 
 var useJokers = false;
@@ -278,22 +278,36 @@ const jInput = $("#input")
 
 // submit command
 jInput.keydown(function(e) {
-	// Enter key pressed
-	
+ 	
 });
 
+
+var commandHistory = []
 // live input
 jInput.keyup(function(e){
 	if (e.keyCode == 13) {
 		e.preventDefault();
-		$("#output").html(SPANSUBMITTED + executeCommand(jInput.val())+ SPANEND);
+		commandHistory.unshift(jInput.val());
+		socket.emit("command", commandHistory[0]);
+		//executeCommand(jInput.val());
 		jInput.val("");
 	} else if (e.keyCode in []){return}
 	else {
-		$("#output").html(SPANDEBUG + constructOutput(jInput.val()) + SPANEND);
+		constructOutput(jInput.val());
 	}
 });
 
+function output(str) {
+	$("#output").html(SPANSUBMITTED + str + SPANEND);
+}
+
+function outputImportant(str) {
+	$("#output").html(SPANPULSE + str + SPANEND);
+}
+
+function outputDebug(str) {
+	$("#output").html(SPANDEBUG + str + SPANEND);
+}
 
 var hands = [];
 var deck;
@@ -305,7 +319,7 @@ function init() {
 }
 
 function reset() {
-	// TODO: make objects
+	// TODO: make objects dynamically
 	defaults();
 }
 
@@ -386,7 +400,7 @@ function parseCard(str) {
 		return x.striped();
 	});
 	var card;
-	// process words (enumerate)
+	// process words (enumerate) for each word
 	for (let e of wordsl.entries()) {
 		// if it's a suit
 		if (e[1] in suits) {
@@ -457,7 +471,6 @@ function startGame() {
 // for debugging purposes.
 function constructOutput(str){
 	// hardcoded rule test, cosmetic onlys
-	
 	return str;
 };
 
@@ -469,11 +482,26 @@ const socket = io.connect();
 socket.on("connect", function() {
 	socket.emit('join');
 	$("#connection-info").addClass("connected");
+	$("#info-online").html("online");
 })
 
 socket.on("disconnect", function() {
 	$("#connection-info").removeClass("connected");
+	$("#info-online").html("offline");
 });
+
+socket.on("broadcast", function(data) {
+	outputImportant(data)
+});
+
+socket.on("command", function(data) {
+	executeCommand(data);
+});
+
+socket.on("refresh", function() {
+	location.reload(true);
+});
+
 
 
 $(document).ready(function() { init(); })
@@ -482,7 +510,3 @@ window.onbeforeunload = function() {
 	socket.emit('leave');
 	socket.disconnect();
 }
-
-socket.on("command", function(data) {
-	executeCommand(data.cmd);
-})

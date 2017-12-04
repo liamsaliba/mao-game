@@ -93,7 +93,7 @@ io.on('connection', (socket) => {
 
 class MaoGame {
 	constructor() {
-
+		
 	}
 
 

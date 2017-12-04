@@ -475,7 +475,10 @@ function constructOutput(str){
 };
 
 function updateUserCount(count){
-	$("#info-online-count").html(count + " online");
+	if(count === undefined)
+		$("#info-online-count").html();
+	else
+		$("#info-online-count").html(count + " online");
 };
 
 
@@ -491,6 +494,7 @@ socket.on("connect", function() {
 socket.on("disconnect", function() {
 	$("#connection-info").removeClass("connected");
 	$("#info-online").html("disconnected");
+	updateUserCount();
 });
 
 socket.on("broadcast", function(data) {

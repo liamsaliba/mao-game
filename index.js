@@ -30,9 +30,14 @@ function e(string){
 // server start calls
 function init() {
 	setTimeout(function(){
-		io.emit("refresh");
-	}, 1000)
+		refreshClients();
+	}, 300)
 	l("Server initialised.")
+}
+
+function refreshClients() {
+	io.emit("refresh");
+	l("Refreshed connected clients.")
 }
 
 // console input handler
@@ -61,7 +66,7 @@ io.on('connection', (socket) => {
 	socket.on("command", function(data) {
 		l("Command from id=" + socket.id + " > " + data);
 	});
-})
+});
 
 class User {
 	constructor(socket) {

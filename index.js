@@ -16,9 +16,14 @@ http.listen(PORTNUMBER, function(){
 	init();
 });
 
+// Libraries
+Array.prototype.remove = function(index) {
+	return this.splice(index, 1)[0];
+}
+
 // logging library
 function l(string) {
-	console.log(new Date().toLocaleString() + " * " + "[" + l.caller.name + "] " + string)
+	console.log(new Date().toLocaleString() + " * " + string)
 }
 function c(string) {
 	console.log(new Date().toLocaleString() + " > > " + string)
@@ -26,6 +31,9 @@ function c(string) {
 function e(string){
 	console.error(new Date().toLocaleString() + " ! " + "[" + e.caller.name + "] " + string)
 }
+
+
+var users = {};
 
 // server start calls
 function init() {
@@ -36,6 +44,7 @@ function init() {
 }
 
 function refreshClients() {
+	users = {};
 	io.emit("refresh");
 	l("Refreshed connected clients.")
 }
@@ -53,26 +62,34 @@ stdin.addListener("data", function(d) {
 });
 
 
-
-
+class User {
+	constructor(socket) {
+		this.socket = socket;
+		l("User created id=" + this.id);
+	}
+	get id() {
+		return this.socket.id;
+	}
+}
 
 io.on('connection', (socket) => {
+	users[socket.id] = new User(socket);
 	l("Connected to client id=" + socket.id + "");
+	io.emit("user count", Object.keys(users).length)
 
-	socket.on('join', function() {
+	socket.on('handshake', function() {
 		l("Handshake from client id=" + socket.id)
 	});
 
 	socket.on("command", function(data) {
 		l("Command from id=" + socket.id + " > " + data);
 	});
-});
 
-class User {
-	constructor(socket) {
-		this.socket = socket;
-	}
-}
+	socket.on("disconnect", function(){
+		delete users[socket.id];
+		l("Disconnected from client id=" + socket.id + "");
+	})
+});
 
 class MaoGame {
 	constructor() {

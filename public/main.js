@@ -474,20 +474,23 @@ function constructOutput(str){
 	return str;
 };
 
+function updateUserCount(count){
+	$("#info-online-count").html(count + " online");
+};
 
 
 const socket = io.connect();
 // connect routine
 
 socket.on("connect", function() {
-	socket.emit('join');
+	socket.emit('handshake');
 	$("#connection-info").addClass("connected");
-	$("#info-online").html("online");
+	$("#info-online").html("connected");
 })
 
 socket.on("disconnect", function() {
 	$("#connection-info").removeClass("connected");
-	$("#info-online").html("offline");
+	$("#info-online").html("disconnected");
 });
 
 socket.on("broadcast", function(data) {
@@ -502,11 +505,13 @@ socket.on("refresh", function() {
 	location.reload(true);
 });
 
-
+socket.on("user count", function(count) {
+	updateUserCount(count);
+});
 
 $(document).ready(function() { init(); })
 
 window.onbeforeunload = function() {
 	socket.emit('leave');
 	socket.disconnect();
-}
+};

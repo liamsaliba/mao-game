@@ -45,6 +45,10 @@ header {
 	padding: 5px;
 }
 
+.cardstack-container {
+	margin-bottom: 10px;
+}
+
 .cardstack {
 	background-color: #eee;
 	border-top: 2px #aaa solid;
@@ -77,6 +81,11 @@ header {
 	cursor: default;
 }
 
+/* for opponent hands + deck */
+.small .card {
+	font-size: 14px;
+}
+
 .red {
 	color: red;
 }
@@ -97,21 +106,16 @@ button:hover {
 	background-color: #fff;
 }
 
-#cardstack-pile {
+.pile {
 	background-color: #fdd;
 }
-
-#cardstack-pile li.card:not(:nth-child(1)) {
+/* TODO: do this with javascript */;
+.pile li.card:not(:nth-child(1)) {
 	opacity: 0.2;
 }
 
 h1, h2, h3 {
 	display: inline-block;
-}
-
-h2 {
-	margin-right: 5px;
-	margin-top: 5px;
 }
 
 #connection-info {

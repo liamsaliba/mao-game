@@ -69,7 +69,13 @@ socket.on("remove placeholder", function(){
 	$("#input").removeAttr('placeholder');
 });
 
-socket.on("clear table", clearTable);
+socket.on("clear table", function() {
+	$("#table *").remove();
+});
+
+socket.on("id", function(data) {
+	$("#info-id").html("id=" + data.id);
+})
 
 $(document).ready(function() { init(); })
 
@@ -78,34 +84,57 @@ window.onbeforeunload = function() {
 	socket.disconnect();
 };
 
+socket.on("new cardstack", newCardStack);
 
-function clearTable() {
-	$("#table *").remove();
-}
-
-jTable = $("#table");
-
-class DisplayCardStack {
-	constructor(title, id) {
-		this.title = id;
-		this.id = id;
-		this.init();
-	}
-	// makes base structure for card stack
-	init() {
-		jTable.append('<div class="cardstack-container" id="cardstack-' + this.id + '"><h2 class="cardstack-title">' + this.title + '</h2><small class="cardstack-count"></small><div class="cardstack"></div>')
-	}
-
-	displayHand() {
-
-	}
-
-}
-cardstacks = {};
-
-socket.on("new cardstack", function(data) {
-	cardstacks[data.id] = new DisplayCardStack(data.title, data.id);	
+socket.on("new cardstacks", function(data) {
+	data.forEach(function(user){
+		newCardStack(user);
+	});
 });
 
+function newCardStack(data) {
+	$("#table").append('<div class="cardstack-container" id="cardstack-' + data.id + '"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small><div class="cardstack"></div>');
+}
 
-clearTable();
+socket.on("del cardstack", function(data){
+	$("#cardstack-" + data.id).remove();
+});
+
+socket.on("display cardcount", function(data) {
+	if(data.count === undefined)
+		$("#cardstack-" + data.id + ".cardstack-count").html("");
+	else
+		$("#cardstack-" + data.id + ".cardstack-count").html("(" + data.count + " cards)");
+})
+
+socket.on("clear cardstack", function(data) {
+	$("#cardstack-" + data.id + ".cardstack li").remove();
+})
+
+
+
+
+socket.on("display remove card", function(data) {
+	$("#" + data.id + " #" + data.displayID).remove();
+});
+
+socket.on("display card top", function(data) {
+	$("#cardstack-" + data.id + " .cardstack").prepend(displayCard(data.card));
+});
+
+socket.on("display card bottom", function(data) {
+	$("#cardstack-" + data.id + " .cardstack").append(displayCard(data.card));
+});
+
+socket.on("display cards", function(data) {
+	for (index in data.cards){
+		$("#cardstack-" + data.id + " .cardstack").append(displayCard(data.cards[index]));
+		console.log(data.id);
+	}
+});
+
+function displayCard(card) {
+	var back = "";
+	if (card.showBack) back = "back";
+	return "<li class='animated flipInY card " + card.colour + " " + back + " #" + card.id + ">" + card.str + "</li>";
+}

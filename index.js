@@ -78,7 +78,7 @@ var users = {};
 function init() {
 	setTimeout(function(){
 		refreshClients();
-	}, 300); // connected clients have time to reconnect before reloading
+	}, 1000); // connected clients have time to reconnect before reloading
 	game = new MaoGame();
 	("Server initialised.")
 }
@@ -98,6 +98,9 @@ stdin.addListener("data", function(d) {
 		io.emit("broadcast", str.slice(1));
 		l("Broadcasting > " + str.slice(1));
 	}
+	else if (str.charAt(0) == "/") {
+		executeCommand(str.slice(1));
+	}
 	else {
 		io.emit(str);
 		l("Emitting > " + str);
@@ -109,9 +112,13 @@ class User {
 	constructor(socket) {
 		this.socket = socket;
 		l("User created id=" + this.id);
+		this.resetHand();
 	}
 	get id() {
 		return this.socket.id;
+	}
+	get name() {
+		return this.id;
 	}
 	resetHand() {
 		this.hand = new CardStack("hand-" + this.id);
@@ -122,19 +129,39 @@ class User {
 io.on('connection', (socket) => {
 	l("Connected to client id=" + socket.id + "");
 	users[socket.id] = new User(socket);
+	socket.emit("id", {id: socket.id});
+
+	// first build card stack layouts
+	socket.emit("new cardstack", {title: "your hand", id: socket.id});
+	socket.emit("new cardstacks", getAllCardStacks(socket));
+
+	// emit new cardstack to other members
+	socket.broadcast.emit("new cardstack", {title: "hand of user " + users[socket.id].name, id: socket.id});
+
 	io.emit("user count", Object.keys(users).length);
 
 	// handle command
 	socket.on("command", function(data) {
 		l("Command from id=" + socket.id + " > " + data);
+		executeCommand(data);
 	});
 
 	socket.on("disconnect", function(){
 		delete users[socket.id];
+		io.emit("del cardstack", {id: socket.id});
+		io.emit("user count", Object.keys(users).length);
 		l("Disconnected from client id=" + socket.id + "");
 	})
 });
 
+function getAllCardStacks(socket){
+	var data = []
+	Object.keys(users).forEach(function(id, index) {
+		if(id !== socket.id)
+			data.push({title: "hand of user " + users[id].name, id: users[id].id, hand: users[id].hand.toDisplay(FACE.DOWN)});
+	});
+	return data;
+}
 
 
 // handle commands by players
@@ -151,52 +178,53 @@ function executeCommand(str) {
 	str.split(", ").forEach(function(piece){
 		output.push(executePiece(piece));
 	});
-	return output.join(BREAK);
+	//return output.join(BREAK);
 };
 
 // TODO: move to command objects
 function executePiece(str) {
 	sstr = str.striped();
-
+	c(str);
 	if(sstr == "reset"){
 		reset();
 		return "Reset the game.";
 	}
+	else if(sstr == "begin"){
+		game.start();
 
-	if(sstr == "begin"){
-		startGame();
-
-		return SPANEND + SPANPULSE + "Here begins the game."
+		//return SPANEND + SPANPULSE + "Here begins the game."
 	}
-	if(sstr == "pass"){
+	else if(sstr == "pass"){
 		hands[0] = deal(hands[0], 1);
 		return "Card drawn by YOU.";
 	}
-	if(sstr == "deal hand"){
+	else if(sstr == "deal hand"){
 		hands[0] = deal(hands[0], 5);
 		return "Hand dealt to YOU."
 	}
-	if(sstr == "shuffle deck") {
+	else if(sstr == "shuffle deck") {
 		deck.shuffle();
 		return "Deck shuffled.";
 	}
-	if(sstr == "sort deck") {
+	else if(sstr == "sort deck") {
 		deck.sort();
 		return "Deck sorted.";
 	}
-	if(sstr == "sort hand") {
+	else if(sstr == "sort hand") {
 		hands[0].sort();
 		return "Sorted YOUR hand."
 	}
 
-	if(sstr == "the chairwoman has entered" || sstr == "the chair woman has entered") {
+	else if(sstr == "the chairwoman has entered" || sstr == "the chair woman has entered") {
 		return str + SPANEND + BREAK + SPANPULSE + "All hail the chairwoman!";
 	}
 
-	if(sstr == "the chairman has entered" || sstr == "the chair man has entered") {
+	else if(sstr == "the chairman has entered" || sstr == "the chair man has entered") {
 		return str + SPANEND + BREAK + SPANPULSE + "All hail the chairman!";
 	}
-	return parseCard(str);
+	else {
+		return parseCard(str);
+	}
 }
 
 function parseCard(str) {
@@ -251,10 +279,10 @@ function attemptPlay(card) {
 
 	if (hands[0].hasCard(card)){
 		if(card.suit == topCard.suit){
-			pile.addCardTop(hands[0].playCard(hands[0].getIndex(card)));
+			pile.addCardToTop(hands[0].playCard(hands[0].getIndex(card)));
 			return "Played " + card;
 		} else if(card.value == topCard.value){
-			pile.addCardTop(hands[0].playCard(hands[0].getIndex(card)));
+			pile.addCardToTop(hands[0].playCard(hands[0].getIndex(card)));
 			return "Played " + card;
 		}
 		hands[0] = deal(hands[0], 1);
@@ -301,51 +329,41 @@ class CardStack {
 	}
 
 	updateDisplay() {
-		//$("#" + this.displayID + " li").remove();
-		//TODO: pass to client
+		io.emit("clear cardstack", {id: this.id});
 		this.displayHand();
-		this.displayCount();
-	}
-
-	displayCardTop(isFaceDown) {
-		//$("#" + this.displayID).prepend(card.toDisplay(isFaceDown));
-		// TODO: pass to client
-		this.displayCount();
-	}
-
-	displayCardBottom(isFaceDown) {
-		//$("#" + this.displayID).append(card.toDisplay(isFaceDown));
-		// TODO: pass to client
 		this.displayCount();
 	}
 
 	displayRemoveCard(card) {
 		//$("#" + this.displayID + " #" + card.displayID).remove();
+		io.emit("display remove card", {id: this.id, index: this.getIndex(card), displayID: card.displayID});
 	}
 
 	// displays whole hand.
 	displayHand(isFaceDown) {
-		/*
-		var el = $("#" + this.displayID);
+		io.emit("display cards", {id: this.id, cards: this.toDisplay(isFaceDown)});
+	}
+
+	toDisplay(isFaceDown) {
+		var cards = []
 		this.cards.forEach(function(card){
-			el.append(card.toDisplay(isFaceDown));
-		}); */
-		// TODO: pass to client
+			cards.push(card.toDisplay(isFaceDown));
+		});
+		return cards
 	}
 	// card count
 	displayCount() {
-		//$("#" + this.displayID + "-count").html("(" + this.length + ")");
-		// TODO: pass to client
+		io.emit("display cardcount", {id: this.id, count: this.length});
 	}
 
 	clearDisplay() {
-		//$("#" + this.displayID + " li").remove();
-		//$("#" + this.displayID + "-count").html("")
-		// TODO: pass to client
+		io.emit("clear cardstack", {id: this.id});
+		// hide card count
+		io.emit("display cardcount", {id: this.id});
 	}
 
 	shuffle() {
-		shuffle(this.cards);
+		this.cards.shuffle();
 		this.updateDisplay();
 	}
 
@@ -356,19 +374,21 @@ class CardStack {
 		this.updateDisplay();
 	}
 
-	addCardBottom(card) {
+	addCardToBottom(card, isFaceDown) {
 		this.cards.push(card);
-		this.displayCardBottom();
+		io.emit("display card bottom", {id: this.id, card: card.toDisplay(isFaceDown)})
+		this.displayCount();
 	}
 
-	addCardTop(card){
+	addCardToTop(card, isFaceDown){
 		this.cards.unshift(card);
-		this.displayCardBottom();
+		io.emit("display card top", {id: this.id, card: card.toDisplay(isFaceDown)});
+		this.displayCount();	
 	}
 	// takes cards from pile and adds to stack (aka deal)
 	takeCards(pile, num) {
-		for (i = 0; i < num; i++){
-			this.addCardTop(pile.playCard());
+		for (let i = 0; i < num; i++){
+			this.addCardToTop(pile.playCard());
 		}
 		return pile;
 	}
@@ -393,6 +413,8 @@ class CardStack {
 }
 
 var useJokers = false;
+
+const FACE = {UP: true, DOWN: false}
 
 class Deck extends CardStack {
 	constructor(id) {
@@ -419,7 +441,7 @@ class Deck extends CardStack {
 
 	// displays whole hand.
 	displayHand(isFaceDown) {
-		super.displayHand(true);
+		super.displayHand(FACE.DOWN);
 	}
 }
 
@@ -468,7 +490,6 @@ class Card {
 	constructor(value, suit) {
 		this.value = value;
 		this.suit = suit;
-		console.log(this.value + " " + this.suit);
 	}
 
 	toString() {
@@ -476,11 +497,9 @@ class Card {
 	};
 
 	toDisplay(isFaceDown) {
-		var displayClass;
-		if(isFaceDown) displayClass = "back";
-		else displayClass = "";
-		///TODO: push to client - possibly.
-		return "<li class='animated flipInY card " + this.suit.colour + " " + displayClass + "' id=" + this.displayID + ">" + this.toString() + "</li>";
+		if(isFaceDown === undefined) isFaceDown = false;
+		return {colour: this.suit.colour, id: this.displayID, showBack: isFaceDown, str: this.toString() };
+		//"<li class='animated flipInY card " + this.suit.colour + " " + displayClass + "' id=" + this.displayID + ">" + this.toString() + "</li>";
 	}
 
 	get id() {

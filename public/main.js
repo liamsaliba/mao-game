@@ -41,6 +41,7 @@ function updateUserCount(count){
 
 const socket = io.connect();
 // connect routine
+//localStorage.debug = "*";
 
 socket.on("connect", function() {
 	$("#connection-info").addClass("connected");
@@ -101,10 +102,13 @@ socket.on("del cardstack", function(data){
 });
 
 socket.on("display cardcount", function(data) {
+	$("#cardstack-" + data.id).html("HELLO");
+	console.log("'#cardstack-" + data.id + "'");
 	if(data.count === undefined)
-		$("#cardstack-" + data.id + ".cardstack-count").html("");
+		$("#cardstack-" + data.id + " > .cardstack-count").html("");
 	else
-		$("#cardstack-" + data.id + ".cardstack-count").html("(" + data.count + " cards)");
+		$("#cardstack-" + data.id + " > .cardstack-count").html("(" + data.count + " cards)");
+	console.log(data.count);
 })
 
 socket.on("clear cardstack", function(data) {
@@ -127,14 +131,15 @@ socket.on("display card bottom", function(data) {
 });
 
 socket.on("display cards", function(data) {
+	console.log(data.id);
 	for (index in data.cards){
 		$("#cardstack-" + data.id + " .cardstack").append(displayCard(data.cards[index]));
-		console.log(data.id);
 	}
 });
 
 function displayCard(card) {
 	var back = "";
+	console.log(card);
 	if (card.showBack) back = "back";
 	return "<li class='animated flipInY card " + card.colour + " " + back + " #" + card.id + ">" + card.str + "</li>";
 }

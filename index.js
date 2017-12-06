@@ -118,7 +118,7 @@ class User {
 		return this.socket.id;
 	}
 	get name() {
-		return this.id;
+		return this.id.slice(0, 6);
 	}
 	resetHand() {
 		this.hand = new CardStack("hand-" + this.id);
@@ -136,7 +136,7 @@ io.on('connection', (socket) => {
 	socket.emit("new cardstacks", getAllCardStacks(socket));
 
 	// emit new cardstack to other members
-	socket.broadcast.emit("new cardstack", {title: "hand of user " + users[socket.id].name, id: socket.id});
+	socket.broadcast.emit("new cardstack", {title: users[socket.id].name + "'s hand", id: socket.id});
 
 	io.emit("user count", Object.keys(users).length);
 
@@ -158,8 +158,10 @@ function getAllCardStacks(socket){
 	var data = []
 	Object.keys(users).forEach(function(id, index) {
 		if(id !== socket.id)
-			data.push({title: "hand of user " + users[id].name, id: users[id].id, hand: users[id].hand.toDisplay(FACE.DOWN)});
+			data.push({title: users[id].name + "'s hand", id: users[id].id, hand: users[id].hand.toDisplay(FACE.DOWN)});
 	});
+	data.push({title: "pile", id: "cardstack-pile", hand: game.pile.toDisplay(FACE.UP)});
+	data.push({title: "deck", id: "cardstack-deck", hand: game.deck.toDisplay(FACE.DOWN)});	
 	return data;
 }
 
@@ -326,12 +328,13 @@ class CardStack {
 
 	hasCard(card) {
 		return this.getIndex(card) !== undefined;
-	}
+	};
 
 	updateDisplay() {
 		io.emit("clear cardstack", {id: this.id});
 		this.displayHand();
 		this.displayCount();
+		c("Displaying '" + this.id);
 	}
 
 	displayRemoveCard(card) {
@@ -342,6 +345,7 @@ class CardStack {
 	// displays whole hand.
 	displayHand(isFaceDown) {
 		io.emit("display cards", {id: this.id, cards: this.toDisplay(isFaceDown)});
+		c("Displaying hand '" + this.id);
 	}
 
 	toDisplay(isFaceDown) {
@@ -419,6 +423,7 @@ const FACE = {UP: true, DOWN: false}
 class Deck extends CardStack {
 	constructor(id) {
 		super(id);
+		c("Deck '" + this.id + "' created.");
 	};
 
 	make() {
@@ -437,6 +442,7 @@ class Deck extends CardStack {
 		}
 		// Display cards
 		this.updateDisplay()
+		c("Deck '" + this.id + "' made.");
 	}
 
 	// displays whole hand.
@@ -531,6 +537,7 @@ class MaoGame {
 	}
 
 	start() {
+		c("Game started");
 		io.emit("remove placeholder");
 		this.reset();
 
@@ -542,5 +549,8 @@ class MaoGame {
 		for(var i = 0; i < Object.keys(users).length; i++){
 			this.deck = users[Object.keys(users)[i]].hand.takeCards(this.deck, 5);
 		};
+
+		this.deck = this.pile.takeCards(this.deck, 1);
+		// takeCards will update display of deck, object needs to be update.
 	}
 }

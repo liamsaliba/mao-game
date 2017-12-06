@@ -79,6 +79,7 @@ function init() {
 	setTimeout(function(){
 		refreshClients();
 	}, 1000); // connected clients have time to reconnect before reloading
+	// TODO: each room has its own MaoGame
 	game = new MaoGame();
 	("Server initialised.")
 }
@@ -121,7 +122,7 @@ class User {
 		return this.id.slice(0, 6);
 	}
 	resetHand() {
-		this.hand = new CardStack("hand-" + this.id);
+		this.hand = new CardStack(this.id);
 	}
 }
 
@@ -305,9 +306,10 @@ function constructOutput(str){
 
 class CardStack {
 	constructor(id) {
-		this.id = id; // used for display
+		this.id = "cardstack-" + id; // used for display
 		this.cards = [];
 		this.clearDisplay();
+		l("CardStack '" + this.id + "' created");
 	}
 
 	get isEmpty() {
@@ -316,10 +318,6 @@ class CardStack {
 
 	get length() {
 		return this.cards.length;
-	}
-
-	get displayID() {
-		return "cardstack-" + this.id;
 	}
 
 	getIndex(card) {
@@ -334,18 +332,18 @@ class CardStack {
 		io.emit("clear cardstack", {id: this.id});
 		this.displayHand();
 		this.displayCount();
-		c("Displaying '" + this.id);
+		l("Displaying '" + this.id + "'");
 	}
 
 	displayRemoveCard(card) {
 		//$("#" + this.displayID + " #" + card.displayID).remove();
-		io.emit("display remove card", {id: this.id, index: this.getIndex(card), displayID: card.displayID});
+		io.emit("display remove card", {id: this.id, cardID: card.id});
 	}
 
 	// displays whole hand.
 	displayHand(isFaceDown) {
 		io.emit("display cards", {id: this.id, cards: this.toDisplay(isFaceDown)});
-		c("Displaying hand '" + this.id);
+		l("Displaying hand '" + this.id + "'");
 	}
 
 	toDisplay(isFaceDown) {
@@ -382,6 +380,7 @@ class CardStack {
 		this.cards.push(card);
 		io.emit("display card bottom", {id: this.id, card: card.toDisplay(isFaceDown)})
 		this.displayCount();
+		l("Displaying '" + card.id + "' at'" + this.id + "'");
 	}
 
 	addCardToTop(card, isFaceDown){
@@ -423,7 +422,7 @@ const FACE = {UP: true, DOWN: false}
 class Deck extends CardStack {
 	constructor(id) {
 		super(id);
-		c("Deck '" + this.id + "' created.");
+		l("Deck '" + this.id + "' created.");
 	};
 
 	make() {
@@ -442,7 +441,7 @@ class Deck extends CardStack {
 		}
 		// Display cards
 		this.updateDisplay()
-		c("Deck '" + this.id + "' made.");
+		l("Deck '" + this.id + "' made.");
 	}
 
 	// displays whole hand.
@@ -504,17 +503,17 @@ class Card {
 
 	toDisplay(isFaceDown) {
 		if(isFaceDown === undefined) isFaceDown = false;
-		return {colour: this.suit.colour, id: this.displayID, showBack: isFaceDown, str: this.toString() };
+		return {colour: this.suit.colour, id: this.id, showBack: isFaceDown, str: this.toString() };
 		//"<li class='animated flipInY card " + this.suit.colour + " " + displayClass + "' id=" + this.displayID + ">" + this.toString() + "</li>";
 	}
 
-	get id() {
+	get numID() {
 		// normal card
 		return ((this.suit.id)*13 + (this.value.id));
 	};
 
-	get displayID() {
-		return "card-" + this.id;
+	get id() {
+		return "card-" + this.numID;
 	}
 }
 

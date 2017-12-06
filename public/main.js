@@ -94,52 +94,52 @@ socket.on("new cardstacks", function(data) {
 });
 
 function newCardStack(data) {
-	$("#table").append('<div class="cardstack-container" id="cardstack-' + data.id + '"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small><div class="cardstack"></div>');
+	$("#table").append('<div class="cardstack-container" id="' + data.id + '"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small><div class="cardstack"></div>');
 }
 
 socket.on("del cardstack", function(data){
-	$("#cardstack-" + data.id).remove();
+	$("#" + data.id).remove();
 });
 
 socket.on("display cardcount", function(data) {
-	$("#cardstack-" + data.id).html("HELLO");
-	console.log("'#cardstack-" + data.id + "'");
 	if(data.count === undefined)
-		$("#cardstack-" + data.id + " > .cardstack-count").html("");
+		$("#" + data.id + " .cardstack-count").html("");
 	else
-		$("#cardstack-" + data.id + " > .cardstack-count").html("(" + data.count + " cards)");
-	console.log(data.count);
+		$("#" + data.id + " .cardstack-count").html("(" + data.count + " cards)");
+	console.log("cardcount of " + data.id + " > " + data.count);
 })
 
 socket.on("clear cardstack", function(data) {
-	$("#cardstack-" + data.id + ".cardstack li").remove();
+	$("#" + data.id + " .cardstack li").remove();
+	console.log("clearing cardstack " + data.id);
 })
 
 
 
 
 socket.on("display remove card", function(data) {
-	$("#" + data.id + " #" + data.displayID).remove();
+	$("#" + data.id + " #" + data.cardID).remove();
+	console.log("remove card " + data.cardID + " from " + data.id);
 });
 
 socket.on("display card top", function(data) {
-	$("#cardstack-" + data.id + " .cardstack").prepend(displayCard(data.card));
+	$("#" + data.id + " .cardstack").prepend(displayCard(data.card));
 });
 
 socket.on("display card bottom", function(data) {
-	$("#cardstack-" + data.id + " .cardstack").append(displayCard(data.card));
+	$("#" + data.id + " .cardstack").append(displayCard(data.card));
 });
 
 socket.on("display cards", function(data) {
-	console.log(data.id);
+	console.log("display cards to " + data.id);
 	for (index in data.cards){
-		$("#cardstack-" + data.id + " .cardstack").append(displayCard(data.cards[index]));
+		$("#" + data.id + " .cardstack").append(displayCard(data.cards[index]));
 	}
 });
 
 function displayCard(card) {
 	var back = "";
-	console.log(card);
+	console.log("display card" + card.str);
 	if (card.showBack) back = "back";
-	return "<li class='animated flipInY card " + card.colour + " " + back + " #" + card.id + ">" + card.str + "</li>";
+	return "<li class='animated flipInY card " + card.colour + " " + back + " id='" + card.id + "'>" + card.str + "</li>";
 }

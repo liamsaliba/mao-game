@@ -86,6 +86,11 @@ header {
 	font-size: 14px;
 }
 
+.cardstack-count {
+	margin-left: 6px;
+}
+
+
 .red {
 	color: red;
 }

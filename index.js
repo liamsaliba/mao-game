@@ -133,11 +133,11 @@ io.on('connection', (socket) => {
 	socket.emit("id", {id: socket.id});
 
 	// first build card stack layouts
-	socket.emit("new cardstack", {title: "your hand", id: socket.id});
+	socket.emit("new cardstack", {title: "your hand", id: users[socket.id].hand.id});
 	socket.emit("new cardstacks", getAllCardStacks(socket));
 
 	// emit new cardstack to other members
-	socket.broadcast.emit("new cardstack", {title: users[socket.id].name + "'s hand", id: socket.id});
+	socket.broadcast.emit("new cardstack", {title: users[socket.id].name + "'s hand", id: users[socket.id].hand.id});
 
 	io.emit("user count", Object.keys(users).length);
 
@@ -157,12 +157,13 @@ io.on('connection', (socket) => {
 
 function getAllCardStacks(socket){
 	var data = []
+	data.push({title: "pile", id: "cardstack-pile", hand: game.pile.toDisplay(FACE.UP)});
+	data.push({title: "deck", id: "cardstack-deck", hand: game.deck.toDisplay(FACE.DOWN)});
+	// TODO: other players have small hands	
 	Object.keys(users).forEach(function(id, index) {
 		if(id !== socket.id)
-			data.push({title: users[id].name + "'s hand", id: users[id].id, hand: users[id].hand.toDisplay(FACE.DOWN)});
+			data.push({title: users[id].name + "'s hand", id: users[id].hand.id, hand: users[id].hand.toDisplay(FACE.DOWN)});
 	});
-	data.push({title: "pile", id: "cardstack-pile", hand: game.pile.toDisplay(FACE.UP)});
-	data.push({title: "deck", id: "cardstack-deck", hand: game.deck.toDisplay(FACE.DOWN)});	
 	return data;
 }
 
@@ -380,13 +381,14 @@ class CardStack {
 		this.cards.push(card);
 		io.emit("display card bottom", {id: this.id, card: card.toDisplay(isFaceDown)})
 		this.displayCount();
-		l("Displaying '" + card.id + "' at'" + this.id + "'");
+		l("Displaying '" + card.id + "' at '" + this.id + "'");
 	}
 
 	addCardToTop(card, isFaceDown){
 		this.cards.unshift(card);
 		io.emit("display card top", {id: this.id, card: card.toDisplay(isFaceDown)});
-		this.displayCount();	
+		this.displayCount();
+		l("Displaying '" + card.id + "' at '" + this.id + "'");	
 	}
 	// takes cards from pile and adds to stack (aka deal)
 	takeCards(pile, num) {

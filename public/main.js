@@ -94,6 +94,7 @@ socket.on("new cardstacks", function(data) {
 });
 
 function newCardStack(data) {
+	console.log("ID = " + data.id);
 	$("#table").append('<div class="cardstack-container" id="' + data.id + '"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small><div class="cardstack"></div>');
 }
 

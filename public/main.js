@@ -94,7 +94,6 @@ socket.on("new cardstacks", function(data) {
 });
 
 function newCardStack(data) {
-	console.log("ID = " + data.id);
 	$("#table").append('<div class="cardstack-container" id="' + data.id + '"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small><div class="cardstack"></div>');
 }
 
@@ -107,12 +106,10 @@ socket.on("display cardcount", function(data) {
 		$("#" + data.id + " .cardstack-count").html("");
 	else
 		$("#" + data.id + " .cardstack-count").html("(" + data.count + " cards)");
-	console.log("cardcount of " + data.id + " > " + data.count);
 })
 
 socket.on("clear cardstack", function(data) {
 	$("#" + data.id + " .cardstack li").remove();
-	console.log("clearing cardstack " + data.id);
 })
 
 
@@ -120,7 +117,6 @@ socket.on("clear cardstack", function(data) {
 
 socket.on("display remove card", function(data) {
 	$("#" + data.id + " #" + data.cardID).remove();
-	console.log("remove card " + data.cardID + " from " + data.id);
 });
 
 socket.on("display card top", function(data) {
@@ -132,7 +128,6 @@ socket.on("display card bottom", function(data) {
 });
 
 socket.on("display cards", function(data) {
-	console.log("display cards to " + data.id);
 	for (index in data.cards){
 		$("#" + data.id + " .cardstack").append(displayCard(data.cards[index]));
 	}
@@ -140,7 +135,8 @@ socket.on("display cards", function(data) {
 
 function displayCard(card) {
 	var back = "";
-	console.log("display card" + card.str);
 	if (card.showBack) back = "back";
-	return "<li class='animated flipInY card " + card.colour + " " + back + " id='" + card.id + "'>" + card.str + "</li>";
+	console.log("showBack: " + card.showBack);
+	console.log("'" + card.id + "'");
+	return "<li class='animated flipInY card " + card.colour + " " + back + "' id='" + card.id + "'>" + card.str + "</li>";
 }

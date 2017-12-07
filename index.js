@@ -58,13 +58,17 @@ Array.prototype.remove = function(index) {
 	return this.splice(index, 1)[0];
 };
 
+Array.prototype.contains = function(obj) {
+	return this.indexOf(obj) > -1;
+}
+
 
 // logging library
 function l(string) {
 	console.log(new Date().toLocaleString() + " * " + string)
 }
 function c(string) {
-	console.log(new Date().toLocaleString() + " > > " + string)
+	console.log(new Date().toLocaleString() + " > " + string)
 }
 function e(string){
 	console.error(new Date().toLocaleString() + " ! " + "[" + e.caller.name + "] " + string)
@@ -94,17 +98,17 @@ function refreshClients() {
 var stdin = process.openStdin();
 stdin.addListener("data", function(d) {
 	str = d.toString().trim().toLowerCase();
-	c(str);
 	if (str.split(" ")[0] == "broadcast"){
+		c("yell> " + str.slice(1));
 		io.emit("broadcast", str.slice(1));
-		l("Broadcasting > " + str.slice(1));
 	}
 	else if (str.charAt(0) == "/") {
-		executeCommand(str.slice(1));
+		c("emit> " + str);
+		io.emit(str);		
 	}
 	else {
-		io.emit(str);
-		l("Emitting > " + str);
+		c("exec> " + str.slice(1));
+		executeCommand(str.slice(1));
 	}
 });
 
@@ -144,7 +148,7 @@ io.on('connection', (socket) => {
 	// handle command
 	socket.on("command", function(data) {
 		l("Command from id=" + socket.id + " > " + data);
-		executeCommand(data);
+		executeCommand(data, socket.id);
 	});
 
 	socket.on("disconnect", function(){
@@ -157,8 +161,8 @@ io.on('connection', (socket) => {
 
 function getAllCardStacks(socket){
 	var data = []
-	data.push({title: "pile", id: "cardstack-pile", hand: game.pile.toDisplay(FACE.UP)});
-	data.push({title: "deck", id: "cardstack-deck", hand: game.deck.toDisplay(FACE.DOWN)});
+	data.push({title: "pile", id: game.pile.id, hand: game.pile.toDisplay(FACE.UP)});
+	data.push({title: "deck", id: game.deck.id, hand: game.deck.toDisplay(FACE.DOWN)});
 	// TODO: other players have small hands	
 	Object.keys(users).forEach(function(id, index) {
 		if(id !== socket.id)
@@ -167,17 +171,25 @@ function getAllCardStacks(socket){
 	return data;
 }
 
-
 // handle commands by players
 class Command {
 	constructor(aliases, toRun){
 		this.aliases = aliases;
 		this.toRun = toRun;
 	}
+
+	isAlias(str){
+		return this.aliases.contains(str);
+	}
 }
 
+commands = {reset: new Command(["reset"], function(){
+				game = new MaoGame();
+			}), refresh: new Command(["refresh"], refreshClients)
+	};
+
 // executes comma separated commands 
-function executeCommand(str) {
+function executeCommand(str, userID) {
 	var output = [];
 	str.split(", ").forEach(function(piece){
 		output.push(executePiece(piece));
@@ -185,8 +197,20 @@ function executeCommand(str) {
 	//return output.join(BREAK);
 };
 
+function executePiece(str, userID) {
+	words = str.striped().sanitise().split(" ");
+	words = parseCard(words);
+
+	Object.keys(commands).forEach(function(name){
+		if(commands[name].isAlias(words[0])){
+			l("Executing " + name + "...");
+			commands[name].toRun(words.slice(1), userID);
+		}
+	});
+}
+
 // TODO: move to command objects
-function executePiece(str) {
+function executePiece2(str) {
 	sstr = str.striped();
 	c(str);
 	if(sstr == "reset"){
@@ -231,49 +255,46 @@ function executePiece(str) {
 	}
 }
 
-function parseCard(str) {
-	var words = str.sanitise().split(" ");
-	var wordsl = words.map(function(x) {
-		return x.striped();
-	});
+function parseCard(words) {
+	var wordsl = words;
 	var card;
 	// process words (enumerate) for each word
-	for (let e of wordsl.entries()) {
+	for (let [index, word] of words.entries()) {
 		// if it's a suit
-		if (e[1] in suits) {
-			suit = SUITS[e[1]];
-			words[e[0]] = suit;
-			// if of
-			if (wordsl[e[0]-1] == "of") {
-				words[e[0]-1] = "";
-				// if value
-				if (wordsl[e[0]-2] in VALUES) {
-					value = VALUES[wordsl[e[0]-2]];
-					words[e[0]-2] = value;
-
-					card = new Card(value, e[1].charAt(0))					
+		SUITS.forEach(function(suit){
+			if (suit.isAlias(word)) {
+				if (wordsl[index - 1] == "of") {
+					VALUES.forEach(function(value){
+						if(value.isAlias(wordsl[index - 2])){
+							words[index - 2] = new Card(value, suit);
+							words.remove(index);
+							words.remove(index - 1);
+							return;
+						}
+					});
 				}
-				// if value without of
-			} else if (wordsl[e[0]-1] in VALUES) {
-				value = VALUES[wordsl[e[0]-1]];
-				words[e[0]-1] = value;
-
-				card = new Card(value, e[1].charAt(0))
+				else {
+					VALUES.forEach(function(value){
+						if(value.isAlias(wordsl[index - 1])){
+							words[index - 1] = new Card(value, suit);
+							words.remove(index);
+							return;
+						}
+					});
+				return;
+				}
 			}
-		}
-	}
-
-	words.removeBlanks();
-
+		});
+	};
+	/*)
 	// play logic
 	if (words.length == 3) {
 		if (wordsl[0] == "play" && card !== undefined){
 			return attemptPlay(card);
 		}
 	}
-	
-	// TODO: convert to card object
-	return words.join(" ")
+	*/
+	return words;
 }
 
 // TODO: migrate suit to SUITS etc
@@ -463,7 +484,7 @@ class Value {
 		return this.string;
 	}
 	isAlias(str) {
-		return (str in this.aliases)
+		return this.aliases.contains(str);
 	}
 }
 
@@ -538,7 +559,7 @@ class MaoGame {
 	}
 
 	start() {
-		c("Game started");
+		l("Game started");
 		io.emit("remove placeholder");
 		this.reset();
 

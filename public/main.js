@@ -16,15 +16,17 @@ jInput.keyup(function(e){
 	}
 });
 
-FORMAT = {"DEFAULT": 0, "IMPORTANT": 1, "DEBUG": 2}
+const FORMAT = {DEFAULT: 0, IMPORTANT: 1, DEBUG: 2, ERROR: 3}
 
 function output(str, format) {
 	if(format == FORMAT.IMPORTANT)
-		$("#output").html("<span class='animated infinite pulse'>" + str + "</span>");
+		$("#output").append("<li class='animated infinite pulse'>" + str + "</li>");
 	else if(format == FORMAT.DEBUG)
-		$("#output").html("<span class='code'>" + str + "</span>");
+		$("#output").append("<li class='code'>" + str + "</li>");
+	else if(format == FORMAT.ERROR)
+		$("#output").html("<li class='animated bounce error'" + str + "</li>")
 	else
-		$("#output").html("<span class='animated bounce submitted'>" + str + "</span>");
+		$("#output").html("<li>" + str + "</li>");
 }
 
 function init() {
@@ -56,6 +58,10 @@ socket.on("disconnect", function() {
 
 socket.on("broadcast", function(data) {
 	output(data, FORMAT.IMPORTANT)
+});
+
+socket.on("output", function(data) {
+	output(data.str, data.format);
 });
 
 socket.on("refresh", function() {
@@ -97,6 +103,7 @@ function newCardStack(data) {
 	$("#table").append('<div class="cardstack-container" id="' + data.id + '"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small><div class="cardstack"></div>');
 }
 
+
 socket.on("del cardstack", function(data){
 	$("#" + data.id).remove();
 });
@@ -134,6 +141,7 @@ socket.on("display cards", function(data) {
 });
 
 function displayCard(card) {
+	console.log(card);
 	var back = "";
 	if (card.showBack) back = "back";
 	console.log("showBack: " + card.showBack);

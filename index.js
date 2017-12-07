@@ -78,6 +78,15 @@ function e(string){
 var game;
 var users = {};
 
+
+const FACE = {UP: true, DOWN: false}
+const RED = 'red';
+const BLACK = 'black';
+
+const FORMAT = {DEFAULT: 0, IMPORTANT: 1, DEBUG: 2, ERROR: 3};
+
+const DISPLAY = {DEFAULT: 0, BACK: 1, SMALL: 2};
+
 // server start calls
 function init() {
 	setTimeout(function(){
@@ -100,7 +109,7 @@ stdin.addListener("data", function(d) {
 	str = d.toString().trim().toLowerCase();
 	if (str.split(" ")[0] == "broadcast"){
 		c("yell> " + str.slice(9));
-		io.emit("broadcast", str.slice(9));
+		io.emit("output", {str: str.slice(9), format: FORMAT.IMPORTANT});
 	}
 	else if (str.split(" ")[0] == "emit") {
 		c("emit> " + str.slice(4));
@@ -128,6 +137,7 @@ class User {
 	resetHand() {
 		this.hand = new CardStack(this.id);
 	}
+
 }
 
 // network handler
@@ -189,18 +199,21 @@ commands = {reset: new Command(["reset"], function(){
 			),	begin: new Command(["begin"], function(){
 				game.start();
 			}), sort: new Command(["sort"], function(args, userID){
-				console.log(args);
 				if (args[0] == "hand"){
 					users[userID].hand.sort();
 				}
+			}), play: new Command(["play", "use"], function(args, userID){
+				console.log(args + " : " + typeof args);
+			}), pass: new Command(["pass"], function(args, userID){
+				game.deck = users[userID].hand.takeCards(game.deck, 1);
 			})
-	};
+		};
 
 // executes comma separated commands 
 function executeCommand(str, userID) {
 	var output = [];
 	str.split(", ").forEach(function(piece){
-		output.push(executePiece(piece));
+		output.push(executePiece(piece, userID));
 	});
 	//return output.join(BREAK);
 };
@@ -233,22 +246,6 @@ function executePiece2(str) {
 	else if(sstr == "pass"){
 		hands[0] = deal(hands[0], 1);
 		return "Card drawn by YOU.";
-	}
-	else if(sstr == "deal hand"){
-		hands[0] = deal(hands[0], 5);
-		return "Hand dealt to YOU."
-	}
-	else if(sstr == "shuffle deck") {
-		deck.shuffle();
-		return "Deck shuffled.";
-	}
-	else if(sstr == "sort deck") {
-		deck.sort();
-		return "Deck sorted.";
-	}
-	else if(sstr == "sort hand") {
-		hands[0].sort();
-		return "Sorted YOUR hand."
 	}
 
 	else if(sstr == "the chairwoman has entered" || sstr == "the chair woman has entered") {
@@ -364,8 +361,8 @@ class CardStack {
 	}
 
 	displayRemoveCard(card) {
-		//$("#" + this.displayID + " #" + card.displayID).remove();
 		io.emit("display remove card", {id: this.id, cardID: card.id});
+		l("Displaying '" + this.id + "'");
 	}
 
 	// displays whole hand.
@@ -399,7 +396,7 @@ class CardStack {
 
 	sort() {
 		this.cards.sort(function(a, b) {
-			return a.id - b.id
+			return a.numID - b.numID
 		});
 		this.updateDisplay();
 	}
@@ -408,14 +405,14 @@ class CardStack {
 		this.cards.push(card);
 		io.emit("display card bottom", {id: this.id, card: card.toDisplay(isFaceDown)})
 		this.displayCount();
-		l("Displaying '" + card.id + "' at '" + this.id + "'");
+		l("Displaying '" + this.id + "'");
 	}
 
 	addCardToTop(card, isFaceDown){
 		this.cards.unshift(card);
 		io.emit("display card top", {id: this.id, card: card.toDisplay(isFaceDown)});
 		this.displayCount();
-		l("Displaying '" + card.id + "' at '" + this.id + "'");	
+		l("Displaying '" + this.id + "'");
 	}
 	// takes cards from pile and adds to stack (aka deal)
 	takeCards(pile, num) {
@@ -446,7 +443,6 @@ class CardStack {
 
 var useJokers = false;
 
-const FACE = {UP: true, DOWN: false}
 
 class Deck extends CardStack {
 	constructor(id) {
@@ -501,17 +497,14 @@ class Suit extends Value {
 	}
 }
 
-const RED = 'red';
-const BLACK = 'black';
-
-var SUITS = [new Suit("Hearts", 0, "&hearts;", ["h", "heart", "hearts"], RED),
+const SUITS = [new Suit("Hearts", 0, "&hearts;", ["h", "heart", "hearts"], RED),
 			 new Suit("Diamonds", 1, "&diams;", ["d", "diams", "diamond", "diamonds"], RED),
 			 new Suit("Clubs", 2, "&clubs;", ["c", "club", "clubs"], BLACK),
 			 new Suit("Spades", 3, "&spades;", ["s", "spade", "spades"], BLACK),
 			 new Suit("Red", 4, "", ["red"], RED), new Suit("Black", 5, "", ["black"], BLACK)
 			];
 
-var VALUES = [new Value("Joker", 0, "JKR", ["joker"]), new Value("Ace", 1, "A", ["ace", "a", "1"]), new Value("2", 2, "2", ["two", "2"]),
+const VALUES = [new Value("Joker", 0, "JKR", ["joker"]), new Value("Ace", 1, "A", ["ace", "a", "1"]), new Value("2", 2, "2", ["two", "2"]),
 			  new Value("3", 3, "3", ["three", "3"]), new Value("4", 4, "4", ["four", "4"]),
 			  new Value("5", 5, "5", ["five", "5"]), new Value("6", 6, "6", ["six", "6"]),
 			  new Value("7", 7, "7", ["seven", "7"]), new Value("8", 8, "8", ["eight", "8"]),
@@ -531,9 +524,9 @@ class Card {
 	};
 
 	toDisplay(isFaceDown) {
+		console.log(isFaceDown);
 		if(isFaceDown === undefined) isFaceDown = false;
 		return {colour: this.suit.colour, id: this.id, showBack: isFaceDown, str: this.toString() };
-		//"<li class='animated flipInY card " + this.suit.colour + " " + displayClass + "' id=" + this.displayID + ">" + this.toString() + "</li>";
 	}
 
 	get numID() {
@@ -573,12 +566,18 @@ class MaoGame {
 		this.deck.make();
 		this.deck.shuffle();
 
-		// deal 5 cards to each player and update the deck
-		for(var i = 0; i < Object.keys(users).length; i++){
-			this.deck = users[Object.keys(users)[i]].hand.takeCards(this.deck, 5);
-		};
+		this.deck = this.allDraw(5);
 
 		this.deck = this.pile.takeCards(this.deck, 1);
 		// takeCards will update display of deck, object needs to be update.
+	}
+
+	allDraw(num) {
+		var deck = this.deck;
+		// deal 5 cards to each player and update the deck
+		Object.keys(users).forEach(function(id, index) {
+			deck = users[id].hand.takeCards(deck, num);
+		});
+		return deck;
 	}
 }

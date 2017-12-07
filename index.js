@@ -99,16 +99,16 @@ var stdin = process.openStdin();
 stdin.addListener("data", function(d) {
 	str = d.toString().trim().toLowerCase();
 	if (str.split(" ")[0] == "broadcast"){
-		c("yell> " + str.slice(1));
-		io.emit("broadcast", str.slice(1));
+		c("yell> " + str.slice(9));
+		io.emit("broadcast", str.slice(9));
 	}
-	else if (str.charAt(0) == "/") {
-		c("emit> " + str);
-		io.emit(str);		
+	else if (str.split(" ")[0] == "emit") {
+		c("emit> " + str.slice(4));
+		io.emit(str.slice(4));		
 	}
 	else {
-		c("exec> " + str.slice(1));
-		executeCommand(str.slice(1));
+		c("exec> " + str);
+		executeCommand(str);
 	}
 });
 
@@ -185,7 +185,15 @@ class Command {
 
 commands = {reset: new Command(["reset"], function(){
 				game = new MaoGame();
-			}), refresh: new Command(["refresh"], refreshClients)
+			}), refresh: new Command(["refresh"], refreshClients
+			),	begin: new Command(["begin"], function(){
+				game.start();
+			}), sort: new Command(["sort"], function(args, userID){
+				console.log(args);
+				if (args[0] == "hand"){
+					users[userID].hand.sort();
+				}
+			})
 	};
 
 // executes comma separated commands 
@@ -323,8 +331,6 @@ function constructOutput(str){
 };
 
 // handle the actual game
-
-
 
 class CardStack {
 	constructor(id) {

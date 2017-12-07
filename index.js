@@ -203,7 +203,13 @@ commands = {reset: new Command(["reset"], function(){
 					users[userID].hand.sort();
 				}
 			}), play: new Command(["play", "use"], function(args, userID){
-				console.log(args + " : " + typeof args);
+				if(args.length == 1 && args[0] instanceof Card){
+					if (users[userID].hand.hasCard(args[0])){
+						game.pile.addCardToTop(users[userID].hand.playCard(args[0]));
+					} else {
+						// don't have that card!
+					}
+				}
 			}), pass: new Command(["pass"], function(args, userID){
 				game.deck = users[userID].hand.takeCards(game.deck, 1);
 			})
@@ -291,14 +297,6 @@ function parseCard(words) {
 			}
 		});
 	};
-	/*)
-	// play logic
-	if (words.length == 3) {
-		if (wordsl[0] == "play" && card !== undefined){
-			return attemptPlay(card);
-		}
-	}
-	*/
 	return words;
 }
 
@@ -350,7 +348,7 @@ class CardStack {
 	};
 
 	hasCard(card) {
-		return this.getIndex(card) !== undefined;
+		return this.getIndex(card) > -1;
 	};
 
 	updateDisplay() {
@@ -418,6 +416,13 @@ class CardStack {
 	takeCards(pile, num) {
 		for (let i = 0; i < num; i++){
 			this.addCardToTop(pile.playCard());
+		}
+		return pile;
+	}
+	// takes cards from pile and adds to stack (aka deal)
+	takeCardsBottom(pile, num) {
+		for (let i = 0; i < num; i++){
+			this.addCardToBottom(pile.playCard());
 		}
 		return pile;
 	}

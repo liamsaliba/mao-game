@@ -16,7 +16,7 @@ span {
 
 body {
 	overflow: none;
-	background: #ddd
+	background: #ddd;
 }
 
 header {
@@ -102,14 +102,6 @@ header {
 
 .back {
 	color: rgba(0,0,0,0.1);
-}
-
-button {
-	font-size: 18px;
-}
-
-button:hover {
-	background-color: #fff;
 }
 
 .pile {

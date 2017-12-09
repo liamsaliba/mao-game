@@ -1,0 +1,30 @@
+body {
+	background: #333;
+	color: white;
+}
+
+#input {
+	background: #111;
+	border-bottom: 2px #888 solid;
+}
+
+#output {
+	background-color: #444;
+}
+
+.cardstack-container {
+	margin-bottom: 10px;
+}
+
+.cardstack {
+	background-color: #222;
+	border-top: 2px #666 solid;
+}
+
+.card {
+	background: #eee;
+}
+
+input {
+	color: #fefefe;
+}

@@ -56,6 +56,13 @@ socket.on("disconnect", function() {
 	updateUserCount();
 });
 
+socket.on("theme", function(data) {
+	if(data === "black")
+		$('link[rel=stylesheet][href~="/dark.css"]').removeAttr('disabled');
+	else if(data === "white")
+		$('link[rel=stylesheet][href~="/dark.css"]').attr('disabled', 'disabled');
+})
+
 socket.on("broadcast", function(data) {
 	output(data, FORMAT.IMPORTANT)
 });

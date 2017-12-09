@@ -146,14 +146,16 @@ io.on('connection', (socket) => {
 	users[socket.id] = new User(socket);
 	socket.emit("id", {id: socket.id});
 
-	// first build card stack layouts
+	// build card stack layouts
 	socket.emit("new cardstack", {title: "your hand", id: users[socket.id].hand.id});
 	socket.emit("new cardstacks", getAllCardStacks(socket));
-
 	// emit new cardstack to other members
 	socket.broadcast.emit("new cardstack", {title: users[socket.id].name + "'s hand", id: users[socket.id].hand.id});
 
 	io.emit("user count", Object.keys(users).length);
+
+
+
 
 	// handle command
 	socket.on("command", function(data) {
@@ -173,7 +175,6 @@ function getAllCardStacks(socket){
 	var data = []
 	data.push({title: "pile", id: game.pile.id, hand: game.pile.toDisplay(FACE.UP)});
 	data.push({title: "deck", id: game.deck.id, hand: game.deck.toDisplay(FACE.DOWN)});
-	// TODO: other players have small hands	
 	Object.keys(users).forEach(function(id, index) {
 		if(id !== socket.id)
 			data.push({title: users[id].name + "'s hand", id: users[id].hand.id, hand: users[id].hand.toDisplay(FACE.DOWN)});
@@ -195,7 +196,7 @@ class Command {
 
 commands = {reset: new Command(["reset"], function(){
 				game = new MaoGame();
-			}), refresh: new Command(["refresh"], refreshClients
+			}),	refresh: new Command(["refresh"], refreshClients
 			),	begin: new Command(["begin"], function(){
 				game.start();
 			}), sort: new Command(["sort"], function(args, userID){
@@ -208,10 +209,13 @@ commands = {reset: new Command(["reset"], function(){
 						game.pile.addCardToTop(users[userID].hand.playCard(args[0]));
 					} else {
 						// don't have that card!
+						// TODO: Penalties
 					}
 				}
 			}), pass: new Command(["pass"], function(args, userID){
 				game.deck = users[userID].hand.takeCards(game.deck, 1);
+			}), theme: new Command(["theme"], function(args, userID){
+				users[userID].socket.emit("theme", args[0]);
 			})
 		};
 
@@ -222,8 +226,9 @@ function executeCommand(str, userID) {
 		output.push(executePiece(piece, userID));
 	});
 	//return output.join(BREAK);
+	// TODO: command logging
 };
-
+// executes a single command
 function executePiece(str, userID) {
 	words = str.striped().sanitise().split(" ");
 	words = parseCard(words);
@@ -235,37 +240,7 @@ function executePiece(str, userID) {
 		}
 	});
 }
-
-// TODO: move to command objects
-function executePiece2(str) {
-	sstr = str.striped();
-	c(str);
-	if(sstr == "reset"){
-		reset();
-		return "Reset the game.";
-	}
-	else if(sstr == "begin"){
-		game.start();
-
-		//return SPANEND + SPANPULSE + "Here begins the game."
-	}
-	else if(sstr == "pass"){
-		hands[0] = deal(hands[0], 1);
-		return "Card drawn by YOU.";
-	}
-
-	else if(sstr == "the chairwoman has entered" || sstr == "the chair woman has entered") {
-		return str + SPANEND + BREAK + SPANPULSE + "All hail the chairwoman!";
-	}
-
-	else if(sstr == "the chairman has entered" || sstr == "the chair man has entered") {
-		return str + SPANEND + BREAK + SPANPULSE + "All hail the chairman!";
-	}
-	else {
-		return parseCard(str);
-	}
-}
-
+// detects and converts string to Card object
 function parseCard(words) {
 	var wordsl = words;
 	var card;
@@ -280,7 +255,7 @@ function parseCard(words) {
 							words[index - 2] = new Card(value, suit);
 							words.remove(index);
 							words.remove(index - 1);
-							return;
+							return; // "Ace of hearts"
 						}
 					});
 				}
@@ -289,7 +264,7 @@ function parseCard(words) {
 						if(value.isAlias(wordsl[index - 1])){
 							words[index - 1] = new Card(value, suit);
 							words.remove(index);
-							return;
+							return; // Ace Hearts
 						}
 					});
 				return;
@@ -300,37 +275,12 @@ function parseCard(words) {
 	return words;
 }
 
-// TODO: migrate suit to SUITS etc
-// TODO: make event driven / exception driven messages to send to client
-function attemptPlay(card) {
-	var topCard = pile.cards[0];
-
-	if (hands[0].hasCard(card)){
-		if(card.suit == topCard.suit){
-			pile.addCardToTop(hands[0].playCard(hands[0].getIndex(card)));
-			return "Played " + card;
-		} else if(card.value == topCard.value){
-			pile.addCardToTop(hands[0].playCard(hands[0].getIndex(card)));
-			return "Played " + card;
-		}
-		hands[0] = deal(hands[0], 1);
-		return ATTENTIONFMT + "Penalty for playing an invalid card!";
-	} return "You don't have " + card;
-}
-
-
-// for debugging purposes. -- handle live textbox input
-function constructOutput(str){
-	// hardcoded rule test, cosmetic onlys
-	return str;
-};
-
-// handle the actual game
 
 class CardStack {
 	constructor(id) {
 		this.id = "cardstack-" + id; // used for display
 		this.cards = [];
+		this.displayMode;
 		this.clearDisplay();
 		l("CardStack '" + this.id + "' created");
 	}
@@ -543,10 +493,6 @@ class Card {
 		return "card-" + this.numID;
 	}
 }
-
-
-
-
 
 class MaoGame {
 	constructor() {

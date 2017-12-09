@@ -2,6 +2,20 @@ var commandHistory = []
 
 const jInput = $("#input")
 
+if(getCookie("theme") !== "")
+	setTheme(getCookie("theme"));
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0; i<ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1);
+        if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+    }
+    return "";
+}
+
 jInput.keyup(function(e){
 	if (e.keyCode == 13) {
 		e.preventDefault();
@@ -56,12 +70,7 @@ socket.on("disconnect", function() {
 	updateUserCount();
 });
 // could make this serverside but meh
-socket.on("theme", function(data) {
-	if(data == "black" || data == "dark" || data == "night")
-		$('link[rel=stylesheet][href~="/dark.css"]').removeAttr('disabled');
-	else if(data == "white" || data == "light" || data == "default")
-		$('link[rel=stylesheet][href~="/dark.css"]').attr('disabled', 'disabled');
-})
+socket.on("theme", setTheme)
 
 socket.on("broadcast", function(data) {
 	output(data, FORMAT.IMPORTANT)
@@ -154,4 +163,12 @@ function displayCard(card) {
 	console.log("showBack: " + card.showBack);
 	console.log("'" + card.id + "'");
 	return "<li class='animated flipInY card " + card.colour + " " + back + "' id='" + card.id + "'>" + card.str + "</li>";
+}
+
+function setTheme(data) {
+	if(data == "black" || data == "dark" || data == "night")
+		$('link[rel=stylesheet][href~="/dark.css"]').removeAttr('disabled');
+	else if(data == "white" || data == "light" || data == "default")
+		$('link[rel=stylesheet][href~="/dark.css"]').attr('disabled', 'disabled');
+	document.cookie = ("theme=" + data)
 }

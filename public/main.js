@@ -55,11 +55,11 @@ socket.on("disconnect", function() {
 	$("#info-online").html("disconnected");
 	updateUserCount();
 });
-
+// could make this serverside but meh
 socket.on("theme", function(data) {
-	if(data === "black")
+	if(data == "black" || data == "dark" || data == "night")
 		$('link[rel=stylesheet][href~="/dark.css"]').removeAttr('disabled');
-	else if(data === "white")
+	else if(data == "white" || data == "light" || data == "default")
 		$('link[rel=stylesheet][href~="/dark.css"]').attr('disabled', 'disabled');
 })
 

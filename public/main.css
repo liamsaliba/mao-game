@@ -44,25 +44,32 @@ header {
 #table {
 	margin: 10px;
 	padding: 5px;
+	position: relative;
 }
 
 .cardstack-container {
-	display: relative;
-	min-width: 180px;
-	max-width: 900px;
+/*	position: absolute;
+	top: 0px;*/
+	display: block;
+	width: fit-content;
+	text-align: center;
 	margin: 0 auto;
-	margin-bottom: 10px;
+	margin-bottom: 1rem;
 }
 
 .cardstack {
 	background-color: #eee;
 	border-top: 2px #aaa solid;
-	padding: 5px;
-	min-height: 50px;
-	min-width: 180px;
+	padding: 0.2rem 1rem;
 	text-align: center;
 	display: inline-block;
 	margin: 0 auto;
+	min-height: 6rem;
+	min-width: 12rem;
+}
+
+.cardstack-head {
+	text-align: left;
 }
 
 .cardstack-box {
@@ -104,6 +111,10 @@ header {
 	height: 3.5rem;
 }
 
+.altuser .cardstack {
+	min-height: 4.5rem;
+}
+
 .cardstack-count {
 	margin-left: 6px;
 }
@@ -117,20 +128,40 @@ header {
 	color: black;
 }
 
-.back, .altuser, .deck .card{
+.back .card, .altuser .card, .deck .card {
 	/* set background image */
+	color: transparent;
+	background: url(https://thomaslmcdonald.files.wordpress.com/2010/09/3fbfd-beeback.jpg);
+	background-position: center;
 }
 
-.altuser {
-
+.deck .cardstack {
+	text-align: left;
+	position: relative;
+	min-width: 5rem;
+	padding: .2rem .5rem;
 }
 
-.pile {
-	height: 5rem;
-	display: block;
+/* stack cards */
+.deck .card {
+	position: absolute;
+}
+
+.cardstack-box {
 	overflow-y: hidden;
-
+	white-space: nowrap;
 }
+
+.pile .cardstack-box {
+	max-width: 30rem;
+	overflow-x: hidden;
+}
+
+.pile, .deck, .altuser {
+	display: inline-block;
+	margin-right: 1rem;
+}
+
 .pile .card {opacity: 0;}
 .pile .card:nth-child(1) {opacity: 1;}
 .pile .card:nth-child(2) {opacity: 0.6;}

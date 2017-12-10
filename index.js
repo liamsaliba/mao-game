@@ -88,7 +88,7 @@ const BLACK = 'black';
 
 const FORMAT = {DEFAULT: 0, IMPORTANT: 1, DEBUG: 2, ERROR: 3};
 
-const DISPLAY = {default: "", back: "back", alternate: "altuser", pile: "pile", deck: "deck"};
+const DISPLAY = {default: "", back: "back", alternate: "altuser", pile: "pile", deck: "deck", user: "user"};
 
 // server start calls
 function init() {
@@ -153,7 +153,7 @@ io.on('connection', (socket) => {
 	// join the game if it hasn't started
 	if(!game.playing) {
 		// display user's cardstack
-		socket.emit("new cardstack", {title: "your hand", id: users[socket.id].hand.id, display: DISPLAY.default});
+		socket.emit("new cardstack", {title: "your hand", id: users[socket.id].hand.id, display: DISPLAY.user});
 		socket.broadcast.emit("new cardstack", {title: users[socket.id].name + "'s hand", id: users[socket.id].hand.id, display: DISPLAY.alternate});
 
 		// display other connected players
@@ -290,6 +290,7 @@ commands = {reset: new Command(["reset"], function(){
 
 class CardStack {
 	constructor(id) {
+		this.userID = id;
 		this.id = "cardstack-" + id; // used for display
 		this.cards = [];
 		this.clearDisplay();

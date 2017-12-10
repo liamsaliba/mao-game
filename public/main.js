@@ -125,7 +125,7 @@ socket.on("new cardstacks", function(data) {
 });
 
 function newCardStack(data) {
-	$("#table").append('<div class="cardstack-container" id="' + data.id + '" ondrop="dropCard(event)" ondragover="allowDrop(event)"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small><div class="cardstack-box"><div class="cardstack ' + data.display + '""></div></div></div>');
+	$("#table").append('<div class="cardstack-container ' + data.display + '" id="' + data.id + '" ondrop="dropCard(event)" ondragover="allowDrop(event)"><div class="cardstack-head"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small></div><div class="cardstack-box"><div class="cardstack"></div></div></div>');
 }
 
 

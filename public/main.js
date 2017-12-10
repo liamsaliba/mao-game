@@ -54,7 +54,7 @@ function updateUserCount(count){
 
 var id;
 const socket = io.connect();
-// connect routine
+// socket.io debugging
 //localStorage.debug = "*";
 
 socket.on("connect", function() {
@@ -125,7 +125,6 @@ socket.on("new cardstacks", function(data) {
 });
 
 function newCardStack(data) {
-	console.log(data);
 	$("#table").append('<div class="cardstack-container" id="' + data.id + '" ondrop="dropCard(event)" ondragover="allowDrop(event)"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small><div class="cardstack-box"><div class="cardstack ' + data.display + '""></div></div></div>');
 }
 
@@ -167,7 +166,7 @@ socket.on("display cards", function(data) {
 });
 
 function displayCard(card) {
-	return "<li class='animated flipInY card " + card.colour + " " + card.display + "' id='" + card.id + "' draggable='true' ondragstart='dragCard(event)'>" + card.str + "</li>";
+	return "<li class='animated flipInY card " + card.colour + "' id='" + card.id + "' draggable='true' ondragstart='dragCard(event)'>" + card.str + "</li>";
 }
 
 ///// Drag and drop functionality

@@ -490,8 +490,13 @@ class Card {
 		return [this.value, this.suit].join(" ");
 	};
 	toDisplayString() {
-		return [this.value, this.suit].join("<br>");
-	}
+		// fix a formatting issue
+		var value = this.value;
+		var suit = this.suit;
+		if(value == "") value = "<br>";
+		else if(suit == "") suit = "<br>";
+		return [value, suit].join("<br>");
+	};
 	// info used to display a specific card
 	toDisplay() {
 		return {colour: this.suit.colour, id: this.id, str: this.toDisplayString() };

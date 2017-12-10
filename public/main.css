@@ -27,7 +27,7 @@ header {
 	background: #eee;
 	border: none;
 	border-bottom: 2px #888 solid;
-	font-size: 24px;
+	font-size: 1.5em;
 	width: 100%;
 	text-align: center;
 	padding: 5px;
@@ -36,8 +36,9 @@ header {
 #output {
 	text-align: center;
 	background-color: #ccc;
-	padding: 6px;
-	min-height: 60px;
+	padding: 5px;
+	min-height: 1rem;
+	max-height: 5rem;
 }
 
 #table {
@@ -46,6 +47,7 @@ header {
 }
 
 .cardstack-container {
+	display: relative;
 	min-width: 180px;
 	max-width: 900px;
 	margin: 0 auto;
@@ -80,22 +82,26 @@ header {
 }
 
 .card {
-	border-radius: 3px;
+	border-radius: 0.3rem;
 	border: 1px lightgray solid;
 	background: white;
-	padding: 3px;
+	padding: 0.4rem;
 	margin: 3px;
 	display: inline-block;
-	width: 3em;
-	height: 40px;
-	font-size: 1em;
+	width: 3.5rem;
+	height: 5rem;
+	font-size: 1.75rem;
+	line-height: 1.25rem;
 	text-align: left;
 	cursor: default;
 }
 
 /* for opponent hands + deck */
 .small .card, .altuser .card {
-	font-size: 18px;
+	font-size: 1.2rem;
+	line-height: 1rem;
+	width: 2.45rem;
+	height: 3.5rem;
 }
 
 .cardstack-count {
@@ -111,8 +117,8 @@ header {
 	color: black;
 }
 
-.back, .altuser, .deck {
-	color: white;
+.back, .altuser, .deck .card{
+	/* set background image */
 }
 
 .altuser {
@@ -120,9 +126,9 @@ header {
 }
 
 .pile {
-	height: 1em;
+	height: 5rem;
 	display: block;
-	overflow-y: none;
+	overflow-y: hidden;
 
 }
 .pile .card {opacity: 0;}
@@ -136,11 +142,6 @@ header {
 .pile .card:nth-child(8) {opacity: 0.028;}
 .pile .card:nth-child(9) {opacity: 0.0168;}
 .pile .card:nth-child(10) {opacity: 0.01;}
-
-
-.deck {
-
-}
 
 h1, h2, h3 {
 	display: inline-block;

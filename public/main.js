@@ -125,7 +125,8 @@ socket.on("new cardstacks", function(data) {
 });
 
 function newCardStack(data) {
-	$("#table").append('<div class="cardstack-container" id="' + data.id + '" ondrop="dropCard(event)" ondragover="allowDrop(event)"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small><div class="cardstack"></div>');
+	console.log(data);
+	$("#table").append('<div class="cardstack-container" id="' + data.id + '" ondrop="dropCard(event)" ondragover="allowDrop(event)"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small><div class="cardstack-box"><div class="cardstack ' + data.display + '""></div></div></div>');
 }
 
 
@@ -148,7 +149,7 @@ socket.on("clear cardstack", function(data) {
 
 
 socket.on("display remove card", function(data) {
-	$("#" + data.id + " #" + data.cardID).fadeOut("normal", function(){$(this).remove()});
+	$("#" + data.id + " #" + data.cardID).remove();
 });
 
 socket.on("display card top", function(data) {
@@ -172,7 +173,7 @@ function displayCard(card) {
 ///// Drag and drop functionality
 function dragCard(event){
 	// sets the data that is to be dragged, by the ID of the element.
-	event.dataTransfer.setData("text\\plain", event.target.id + ";" + event.path[2].id);
+	event.dataTransfer.setData("text\\plain", event.target.id + ";" + event.path[3].id);
 	setTimeout(function() {event.target.style.opacity = .01}, 10);
 }
 
@@ -192,8 +193,8 @@ function dropCard(event){
 	if(data.length != 2) return false; // not a card
 
 	var destination; // drag to container
-	if(event.target.id == "") destination = event.path[1].id;
-	else destination = event.path[2].id; // drag to card in container
+	if(event.target.id == "") destination = event.path[2].id;
+	else destination = event.path[3].id; // drag to card in container
 
 	socket.emit("play card", {cardID: data[0], origin: data[1], destination: destination});
 	// server handles the rest.

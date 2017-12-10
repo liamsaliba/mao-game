@@ -163,18 +163,68 @@ io.on('connection', (socket) => {
 		executeCommand(data, socket.id);
 	});
 
+	socket.on("play card", function(data){
+		var cardID = data.cardID.replace("card-", "");
+		var origin = data.origin.replace("cardstack-", "");
+		var destination = data.destination.replace("cardstack-", "");
+		movingCard = new Card(Card.getValueFromID(cardID), Card.getSuitFromID(cardID));
+		l(socket.id + " moving " + movingCard.toString() + " from " + origin + " to " + destination);
+
+		// play card logic TODO: functionalise
+		if (origin == destination) {
+			// Nothing move, do nothing
+			l("Origin = destination, no move.")
+			return;
+		} else if (origin == "deck"){
+			if (destination == socket.id) {
+				// force taking from the top of the deck
+				users[socket.id].hand.addCardToTop(game.deck.playCard(game.deck.cards[0]));
+				l("Moved from deck to hand.")
+			} else {
+				// can only pass to yourself, use penalty button
+				// to penalise other players
+				l("Can't move from deck to " + destination)
+			}
+		} else if (origin == socket.id) {
+			if (users[socket.id].hand.hasCard(movingCard)){
+				if (destination == "pile"){
+					// can move from hand to play cards.
+					game.pile.addCardToTop(users[socket.id].hand.playCard(movingCard))
+					l("Moved from hand to pile.")
+				} else {
+					// can move from hand to other hand for specific rules (IMPLEMENT LATER.)
+					// for now, can't do that.
+					l("Can't move from hand to " + destination)
+				}
+			} else {
+				// you don't have that card
+				// no penalty.
+				// make a big EXCEPTION because how would this happen?
+				l("Hand doesn't have that card.")
+			}
+		} else if (origin == "pile") {
+			// can't move cards from the pile.
+			l("Can't move cards from the pile.")
+		} else {
+			// attempted move from another player's hand.
+			// can't do that.
+			l("Can't move cards from other hands.");
+		}
+	});
+
 	socket.on("disconnect", function(){
 		delete users[socket.id];
 		io.emit("del cardstack", {id: socket.id});
 		io.emit("user count", Object.keys(users).length);
 		l("Disconnected from client id=" + socket.id + "");
-	})
+	});
 });
 
 function getAllCardStacks(socket){
 	var data = []
 	data.push({title: "pile", id: game.pile.id, hand: game.pile.toDisplay(FACE.UP)});
 	data.push({title: "deck", id: game.deck.id, hand: game.deck.toDisplay(FACE.DOWN)});
+
 	Object.keys(users).forEach(function(id, index) {
 		if(id !== socket.id)
 			data.push({title: users[id].name + "'s hand", id: users[id].hand.id, hand: users[id].hand.toDisplay(FACE.DOWN)});
@@ -216,6 +266,10 @@ commands = {reset: new Command(["reset"], function(){
 				game.deck = users[userID].hand.takeCards(game.deck, 1);
 			}), theme: new Command(["theme"], function(args, userID){
 				users[userID].socket.emit("theme", args[0]);
+			}), users: new Command(["users"], function() {
+				// Debug command comparing socket.io's users and my tracked users
+				console.log(users);
+				console.log(Object.keys(io.sockets.sockets));
 			})
 		};
 
@@ -280,7 +334,7 @@ class CardStack {
 	constructor(id) {
 		this.id = "cardstack-" + id; // used for display
 		this.cards = [];
-		this.displayMode;
+		this.displayMode = DISPLAY;
 		this.clearDisplay();
 		l("CardStack '" + this.id + "' created");
 	}
@@ -479,18 +533,25 @@ class Card {
 	};
 
 	toDisplay(isFaceDown) {
-		console.log(isFaceDown);
 		if(isFaceDown === undefined) isFaceDown = false;
 		return {colour: this.suit.colour, id: this.id, showBack: isFaceDown, str: this.toString() };
 	}
-
+	// use 14 instead of 13 to ensure Joker gets its own distinct ID.
 	get numID() {
 		// normal card
-		return ((this.suit.id)*13 + (this.value.id));
+		return ((this.suit.id)*14 + (this.value.id));
 	};
 
 	get id() {
 		return "card-" + this.numID;
+	}
+
+	static getSuitFromID(id) {
+		return SUITS[Math.floor(id/14)];
+	}
+
+	static getValueFromID(id) {
+		return VALUES[id%14];
 	}
 }
 

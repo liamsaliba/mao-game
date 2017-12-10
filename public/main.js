@@ -54,7 +54,7 @@ function updateUserCount(count){
 		$("#info-online-count").html(count + " online");
 };
 
-
+var id;
 const socket = io.connect();
 // connect routine
 //localStorage.debug = "*";
@@ -62,6 +62,13 @@ const socket = io.connect();
 socket.on("connect", function() {
 	$("#connection-info").addClass("connected");
 	$("#info-online").html("connected");
+	$(".cardstack-container").remove(); // resets display
+	id = socket.id;
+});
+
+socket.on("reconnect", function(){
+	console.log("reconnected!");
+	// TODO: handle continue
 })
 
 socket.on("disconnect", function() {
@@ -89,7 +96,7 @@ socket.on("user count", function(count) {
 });
 
 socket.on("remove placeholder", function(){
-	$("#input").removeAttr('placeholder');
+	$("#input").attr('placeholder', 'enter command...');
 });
 
 socket.on("clear table", function() {
@@ -97,12 +104,16 @@ socket.on("clear table", function() {
 });
 
 socket.on("id", function(data) {
-	$("#info-id").html("id=" + data.id);
+	id = data.id;
+	$("#info-id").html("id=" + id);
 })
 
 $(document).ready(function() { init(); })
 
-window.onbeforeunload = function() {
+// exit warning
+//window.onbeforeunload = function() {return true;};
+
+window.onunload = function() {
 	socket.emit('leave');
 	socket.disconnect();
 };
@@ -116,12 +127,12 @@ socket.on("new cardstacks", function(data) {
 });
 
 function newCardStack(data) {
-	$("#table").append('<div class="cardstack-container" id="' + data.id + '"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small><div class="cardstack"></div>');
+	$("#table").append('<div class="cardstack-container" id="' + data.id + '" ondrop="dropCard(event)" ondragover="allowDrop(event)"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small><div class="cardstack"></div>');
 }
 
 
 socket.on("del cardstack", function(data){
-	$("#" + data.id).remove();
+	$("#cardstack-" + data.id).remove();
 });
 
 socket.on("display cardcount", function(data) {
@@ -160,9 +171,32 @@ function displayCard(card) {
 	console.log(card);
 	var back = "";
 	if (card.showBack) back = "back";
-	console.log("showBack: " + card.showBack);
-	console.log("'" + card.id + "'");
-	return "<li class='animated flipInY card " + card.colour + " " + back + "' id='" + card.id + "'>" + card.str + "</li>";
+	console.log("'" + card.id + "' - showBack: " + card.showBack);
+	return "<li class='animated flipInY card " + card.colour + " " + back + "' id='" + card.id + "' draggable='true' ondragstart='dragCard(event)'>" + card.str + "</li>";
+}
+
+function dragCard(event){
+	// sets the data that is to be dragged, by the ID of the element.
+	event.dataTransfer.setData("text\\plain", event.target.id + ";" + event.path[2].id);
+	$("#"+event.target.id).fadeOut();
+}
+
+// Displays drop cursor
+function allowDrop(event) {
+	event.preventDefault(); // data/elements cannot be dropped in other elements by default
+}
+
+function dropCard(event){
+	event.preventDefault(); // open as link on drop by default
+	var data = event.dataTransfer.getData("text\\plain").split(";") // the ID of the dropped element
+	if(data.length != 2) return false;
+	$("#"+data[0]).fadeIn();
+	var destination;
+	if(event.target.id == "") destination = event.path[1].id;
+	else destination = event.path[2].id;
+	console.log(event);
+	socket.emit("play card", {cardID: data[0], origin: data[1], destination: destination});
+	// server handles the rest.
 }
 
 function setTheme(data) {

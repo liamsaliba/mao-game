@@ -15,7 +15,7 @@ span {
 }
 
 body {
-	overflow: none;
+	overflow: hidden;
 	background: #ddd;
 }
 

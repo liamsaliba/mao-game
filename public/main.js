@@ -110,7 +110,7 @@ socket.on("id", function(data) {
 
 $(document).ready(function() { init(); })
 
-// exit warning
+// exit warning DEBUG DISABLED
 //window.onbeforeunload = function() {return true;};
 
 window.onunload = function() {
@@ -175,10 +175,11 @@ function displayCard(card) {
 	return "<li class='animated flipInY card " + card.colour + " " + back + "' id='" + card.id + "' draggable='true' ondragstart='dragCard(event)'>" + card.str + "</li>";
 }
 
+///// Drag and drop functionality
 function dragCard(event){
 	// sets the data that is to be dragged, by the ID of the element.
 	event.dataTransfer.setData("text\\plain", event.target.id + ";" + event.path[2].id);
-	$("#"+event.target.id).fadeOut();
+	setTimeout(function() {event.target.style.opacity = .01}, 10);
 }
 
 // Displays drop cursor
@@ -186,15 +187,20 @@ function allowDrop(event) {
 	event.preventDefault(); // data/elements cannot be dropped in other elements by default
 }
 
+// Reset opacity on cancel / mistake
+document.addEventListener("dragend", function(event){
+	event.target.style.opacity = 1;
+})
+
 function dropCard(event){
 	event.preventDefault(); // open as link on drop by default
 	var data = event.dataTransfer.getData("text\\plain").split(";") // the ID of the dropped element
-	if(data.length != 2) return false;
-	$("#"+data[0]).fadeIn();
-	var destination;
+	if(data.length != 2) return false; // not a card
+
+	var destination; // drag to container
 	if(event.target.id == "") destination = event.path[1].id;
-	else destination = event.path[2].id;
-	console.log(event);
+	else destination = event.path[2].id; // drag to card in container
+
 	socket.emit("play card", {cardID: data[0], origin: data[1], destination: destination});
 	// server handles the rest.
 }

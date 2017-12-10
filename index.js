@@ -153,8 +153,8 @@ io.on('connection', (socket) => {
 	// join the game if it hasn't started
 	if(!game.playing) {
 		// display user's cardstack
-		socket.emit("new cardstack", {title: "your hand", id: users[socket.id].hand.id});
-		socket.broadcast.emit("new cardstack", {title: users[socket.id].name + "'s hand", id: users[socket.id].hand.id});
+		socket.emit("new cardstack", {title: "your hand", id: users[socket.id].hand.id, display: DISPLAY.default});
+		socket.broadcast.emit("new cardstack", {title: users[socket.id].name + "'s hand", id: users[socket.id].hand.id, display: DISPLAY.alternate});
 
 		// display other connected players
 		socket.emit("new cardstacks", game.getAllCardStacks(socket));
@@ -260,7 +260,7 @@ class Command {
 }
 
 commands = {reset: new Command(["reset"], function(){
-				game = new MaoGame();
+				init();
 			}),	refresh: new Command(["refresh"], refreshClients
 			),	begin: new Command(["begin", "start"], function(){
 				game.start();
@@ -278,7 +278,7 @@ commands = {reset: new Command(["reset"], function(){
 					}
 				}
 			}), pass: new Command(["pass"], function(args, userID){
-				game.deck = users[userID].hand.takeCards(game.deck, 1);
+				users[userID].hand.addCardToTop(game.deck.playCard(game.deck.cards[0]));
 			}), theme: new Command(["theme"], function(args, userID){
 				users[userID].socket.emit("theme", args[0]);
 			}), users: new Command(["users"], function() {
@@ -383,13 +383,6 @@ class CardStack {
 		l("Adding card to top of " + this.id);
 	}
 	// takes cards from pile and adds to stack (aka deal)
-	takeCards(pile, num) {
-		for (let i = 0; i < num; i++){
-			this.addCardToTop(pile.playCard());
-		}
-		return pile;
-	}
-	// takes cards from pile and adds to stack (aka deal)
 	takeCardsBottom(pile, num) {
 		for (let i = 0; i < num; i++){
 			this.addCardToBottom(pile.playCard());
@@ -399,15 +392,14 @@ class CardStack {
 
 	removeCard(card){
 		card = this.cards.remove(this.getIndex(card));
-		this.displayRemoveCard(card);
-		this.displayCount();
 		return card;
 	}
 
 	playCard(card) {
-		if(this.isEmpty) return false; // no cards to play
-		if(card == undefined) card = this.cards[0]; // just play top of the pile
-		return this.removeCard(card);
+		card = this.removeCard(card)
+		this.displayRemoveCard(card);
+		this.displayCount();
+		return card;
 	}
 
 	emptyStack() {
@@ -497,9 +489,12 @@ class Card {
 	toString() {
 		return [this.value, this.suit].join(" ");
 	};
+	toDisplayString() {
+		return [this.value, this.suit].join("<br>");
+	}
 	// info used to display a specific card
 	toDisplay() {
-		return {colour: this.suit.colour, id: this.id, str: this.toString() };
+		return {colour: this.suit.colour, id: this.id, str: this.toDisplayString() };
 	}
 	// use 14 instead of 13 to ensure Joker gets its own distinct ID.
 	get numID() {
@@ -583,8 +578,7 @@ class MaoGame {
 		// everyone starts with 5 cards [TODO: change by # players]
 		this.allDraw(5);
 		// one pile card
-		this.deck = this.pile.takeCards(this.deck, 1);
-		// takeCards will update display of deck, object needs to be update.
+		this.pile.addCardToTop(this.deck.playCard(this.deck.cards[0]));
 		i("Completed game start.");
 	}
 
@@ -592,7 +586,9 @@ class MaoGame {
 		var deck = this.deck;
 		// deal 5 cards to each player and update the deck
 		Object.keys(users).forEach(function(id, index) {
-			deck = users[id].hand.takeCards(deck, num);
+			for(let n = 0; n < num; n++){
+				users[id].hand.addCardToTop(deck.playCard(deck.cards[0]));
+			}
 		});
 		this.deck = deck;
 	}
@@ -600,12 +596,12 @@ class MaoGame {
 	// set up table for new user (pile, deck, other users)
 	getAllCardStacks(socket){
 		var data = []
-		data.push({title: "pile", id: this.pile.id, hand: this.pile.toDisplay(FACE.UP)});
-		data.push({title: "deck", id: this.deck.id, hand: this.deck.toDisplay(FACE.DOWN)});
+		data.push({title: "pile", id: this.pile.id, display: DISPLAY.pile});
+		data.push({title: "deck", id: this.deck.id, display: DISPLAY.deck});
 
 		Object.keys(users).forEach(function(id, index) {
 			if(id !== socket.id)
-				data.push({title: users[id].name + "'s hand", id: users[id].hand.id, hand: users[id].hand.toDisplay(FACE.DOWN)});
+				data.push({title: users[id].name + "'s hand", id: users[id].hand.id, display: DISPLAY.alternate});
 		});
 		return data;
 	}

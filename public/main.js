@@ -30,8 +30,6 @@ jInput.keyup(function(e){
 	}
 });
 
-const FORMAT = {DEFAULT: 0, IMPORTANT: 1, DEBUG: 2, ERROR: 3}
-
 function output(str, format) {
 	if(format == FORMAT.IMPORTANT)
 		$("#output").append("<li class='animated infinite pulse'>" + str + "</li>");
@@ -150,7 +148,7 @@ socket.on("clear cardstack", function(data) {
 
 
 socket.on("display remove card", function(data) {
-	$("#" + data.id + " #" + data.cardID).remove();
+	$("#" + data.id + " #" + data.cardID).fadeOut("normal", function(){$(this).remove()});
 });
 
 socket.on("display card top", function(data) {
@@ -168,11 +166,7 @@ socket.on("display cards", function(data) {
 });
 
 function displayCard(card) {
-	console.log(card);
-	var back = "";
-	if (card.showBack) back = "back";
-	console.log("'" + card.id + "' - showBack: " + card.showBack);
-	return "<li class='animated flipInY card " + card.colour + " " + back + "' id='" + card.id + "' draggable='true' ondragstart='dragCard(event)'>" + card.str + "</li>";
+	return "<li class='animated flipInY card " + card.colour + " " + card.display + "' id='" + card.id + "' draggable='true' ondragstart='dragCard(event)'>" + card.str + "</li>";
 }
 
 ///// Drag and drop functionality

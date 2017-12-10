@@ -46,6 +46,9 @@ header {
 }
 
 .cardstack-container {
+	min-width: 180px;
+	max-width: 900px;
+	margin: 0 auto;
 	margin-bottom: 10px;
 }
 
@@ -54,7 +57,14 @@ header {
 	border-top: 2px #aaa solid;
 	padding: 5px;
 	min-height: 50px;
+	min-width: 180px;
 	text-align: center;
+	display: inline-block;
+	margin: 0 auto;
+}
+
+.cardstack-box {
+	display: block;
 }
 
 .code {
@@ -76,15 +86,16 @@ header {
 	padding: 3px;
 	margin: 3px;
 	display: inline-block;
-	width: 75px;
-	font-size: 24px;
+	width: 3em;
+	height: 40px;
+	font-size: 1em;
 	text-align: left;
 	cursor: default;
 }
 
 /* for opponent hands + deck */
-.small .card {
-	font-size: 14px;
+.small .card, .altuser .card {
+	font-size: 18px;
 }
 
 .cardstack-count {
@@ -100,16 +111,35 @@ header {
 	color: black;
 }
 
-.back {
-	color: rgba(0,0,0,0.1);
+.back, .altuser, .deck {
+	color: white;
+}
+
+.altuser {
+
 }
 
 .pile {
-	background-color: #fdd;
+	height: 1em;
+	display: block;
+	overflow-y: none;
+
 }
-/* TODO: do this with javascript */;
-.pile li.card:not(:nth-child(1)) {
-	opacity: 0.2;
+.pile .card {opacity: 0;}
+.pile .card:nth-child(1) {opacity: 1;}
+.pile .card:nth-child(2) {opacity: 0.6;}
+.pile .card:nth-child(3) {opacity: 0.36;}
+.pile .card:nth-child(4) {opacity: 0.216;}
+.pile .card:nth-child(5) {opacity: 0.1296;}
+.pile .card:nth-child(6) {opacity: 0.07776;}
+.pile .card:nth-child(7) {opacity: 0.046656;}
+.pile .card:nth-child(8) {opacity: 0.028;}
+.pile .card:nth-child(9) {opacity: 0.0168;}
+.pile .card:nth-child(10) {opacity: 0.01;}
+
+
+.deck {
+
 }
 
 h1, h2, h3 {

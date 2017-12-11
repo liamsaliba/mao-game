@@ -66,6 +66,9 @@ header {
 	margin: 0 auto;
 	min-height: 6rem;
 	min-width: 12rem;
+	-moz-box-shadow: 0 0 3px #999;
+	-webkit-box-shadow: 0 0 3px #999;
+	box-shadow: 0 0 3px #999;
 }
 
 .cardstack-head {
@@ -101,6 +104,9 @@ header {
 	line-height: 1.25rem;
 	text-align: left;
 	cursor: default;
+	-moz-box-shadow: 0 0 5px #888;
+	-webkit-box-shadow: 0 0 5px#888;
+	box-shadow: 0 0 5px #888;
 }
 
 /* for opponent hands + deck */

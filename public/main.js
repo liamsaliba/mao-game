@@ -67,7 +67,11 @@ function updateUserCount(count){
 };
 
 var id;
-const socket = io.connect();
+const socket = io.connect("/");
+
+if(window.location.pathname.slice(0, 6) == "/room/"){
+	socket.emit("join room", window.location.pathname.slice(6));
+}
 // socket.io debugging
 //localStorage.debug = "*";
 

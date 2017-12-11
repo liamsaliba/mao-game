@@ -174,15 +174,6 @@ main {
 	padding-right: 3rem;
 }
 
-.cardstack {
-	border: 1px solid yellow;
-}
-
-/*center vertically */
-.deck .card, .pile .card{
-
-}
-
 .deck .cardstack-head, .pile .cardstack-head {
 	display: none;
 }

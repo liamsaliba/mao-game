@@ -1,4 +1,4 @@
-var commandHistory = []
+var commandHistory = ["begin"]
 
 const jInput = $("#input")
 
@@ -16,8 +16,21 @@ function getCookie(cname) {
     return "";
 }
 
+var selectionIndex = -1;
 jInput.keyup(function(e){
 	console.log(e.keyCode);
+	if (e.keyCode == 38) { // up arrow
+		if(selectionIndex < commandHistory.length-1)
+			selectionIndex++;
+		jInput.val(commandHistory[selectionIndex]);
+	} else if (e.keyCode == 40) {
+		if(selectionIndex > -1){
+			selectionIndex--;
+			jInput.val(commandHistory[selectionIndex]);
+		} else {
+			jInput.val("");
+		}
+	}
 	if (e.keyCode == 13) {
 		e.preventDefault();
 		if(jInput.val() !== ""){

@@ -152,7 +152,8 @@ function setTable(){
 
 
 socket.on("del cardstack", function(data){
-	$("#cardstack-" + data.id).remove();
+	cardstacks.splice(cardstacks.indexOf(data.id), 1);
+	$("#" + data.id).remove();
 	setTable();
 });
 

@@ -129,7 +129,6 @@ class User {
 	constructor(socket) {
 		this.socket = socket;
 		l("User created id=" + this.id);
-		this.resetHand();
 		// TODO: add method to make new name
 		this.name = this.id.slice(0, 6);
 
@@ -152,6 +151,7 @@ io.on('connection', (socket) => {
 	// join the game if it hasn't started
 	if(!game.playing) {
 		// add new user to other players
+		users[socket.id].resetHand()
 		socket.broadcast.emit("new cardstack", {title: users[socket.id].name + "'s hand", id: users[socket.id].hand.id, display: DISPLAY.alternate});
 
 		// display all connected players
@@ -217,9 +217,11 @@ io.on('connection', (socket) => {
 	}
 
 	socket.on("disconnect", function(){
-		delete users[socket.id];
-		io.emit("del cardstack", {id: socket.id});
+		try {
+			io.emit("del cardstack", {id: users[socket.id].hand.id});
+		} catch(err) {} // if the user was a spectator, does not have a hand.
 		io.emit("user count", Object.keys(users).length);
+		delete users[socket.id];
 		l("Disconnected from client id=" + socket.id + "");
 	});
 });
@@ -610,7 +612,10 @@ class MaoGame {
 				disp = DISPLAY.user;
 				name = "your"
 			}
-			data.push({title: name + " hand", id: users[id].hand.id, display: disp});
+			try	{
+				data.push({title: name + " hand", id: users[id].hand.id, display: disp});
+			} catch(err) {}; 
+			// don't need to send hand if they don't have one (spectators)
 		});
 		return data;
 	}
@@ -621,7 +626,9 @@ class MaoGame {
 		this.deck.refreshDisplay(socket);
 		this.pile.refreshDisplay(socket);
 		Object.keys(users).forEach(function(id, index) {
-			users[id].hand.refreshDisplay(socket);
+			try {
+				users[id].hand.refreshDisplay(socket);
+			} catch(err) {}; // no need to refresh display if they don't have a hand
 		});
 	};
 }

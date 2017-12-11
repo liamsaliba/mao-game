@@ -71,6 +71,8 @@ const socket = io.connect("/");
 
 if(window.location.pathname.slice(0, 6) == "/room/"){
 	socket.emit("join room", window.location.pathname.slice(6));
+} else{
+	socket.emit("join room", "");
 }
 // socket.io debugging
 //localStorage.debug = "*";

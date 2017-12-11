@@ -27,6 +27,10 @@ body {
 	margin: 0.5em;
 }
 
+header {
+	background: linear-gradient(to bottom, #888 0%, #ddd 100%);
+}
+
 main {
 	flex-grow: 1;
 	position: relative;
@@ -165,6 +169,7 @@ main {
 	position: relative;
 	min-width: 5rem;
 	padding: 4rem 4rem;
+	border-bottom: none; /*remove cardstack border*/
 }
 
 .user .cardstack {

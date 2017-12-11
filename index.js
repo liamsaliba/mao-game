@@ -7,6 +7,14 @@ var http = require('http').Server(app);
 // Route handler, sends index.html when root address is hit.
 app.use(express.static(__dirname + '/public'));
 
+app.get("/room/", function(req, res){
+	res.sendFile(__dirname + "/public/index.html");
+});
+
+app.get("/room/:roomID", function(req, res){
+	res.sendFile(__dirname + "/public/index.html");
+});
+
 var io = require('socket.io')(http);
 
 const PORTNUMBER = 6060;
@@ -78,9 +86,7 @@ function e(string){
 }
 
 // game object
-var game;
-var users = {};
-
+var rooms = {};
 
 const FACE = {UP: true, DOWN: false}
 const RED = 'red';
@@ -95,13 +101,12 @@ function init() {
 	setTimeout(function(){
 		refreshClients();
 	}, 1000); // connected clients have time to reconnect before reloading DEBUG ENABLED
-	// TODO: each room has its own MaoGame
-	game = new MaoGame();
+	rooms = {};
 	i("Server initialised.")
 }
 
 function refreshClients() {
-	users = {};
+	rooms = {};
 	io.emit("refresh");
 	l("Refreshed connected clients.")
 }
@@ -125,9 +130,24 @@ stdin.addListener("data", function(d) {
 });
 
 
+class Room {
+	constructor(id){
+		l("Room '" + id + "' created.")
+		this.id = id;
+		this.users = {};
+		//this.reset();
+	}
+	reset(){
+		l("Room '" + this.id + "' reset.")
+		this.users = {};
+		this.game = new MaoGame(this.id);
+	}
+}
+
 class User {
-	constructor(socket) {
+	constructor(socket, room) {
 		this.socket = socket;
+		this.room = room;
 		l("User created id=" + this.id);
 		// TODO: add method to make new name
 		this.name = this.id.slice(0, 6);
@@ -137,7 +157,7 @@ class User {
 		return this.socket.id;
 	}
 	resetHand() {
-		this.hand = new CardStack(this.id);
+		this.hand = new CardStack(this.id, this.room);
 	}
 
 }
@@ -145,84 +165,99 @@ class User {
 // network handler
 io.on('connection', (socket) => {
 	l("Connected to client id=" + socket.id + "");
-	users[socket.id] = new User(socket); // TODO: users PER room
-	io.emit("user count", Object.keys(users).length);
 
-	// join the game if it hasn't started
-	if(!game.playing) {
-		// add new user to other players
-		users[socket.id].resetHand()
-		socket.broadcast.emit("new cardstack", {title: users[socket.id].name + "'s hand", id: users[socket.id].hand.id, display: DISPLAY.alternate});
+	socket.on("join room", function(room){
+		socket.join(room)
+		l(socket.id + " join room " + room);
+		if (typeof rooms[room] === "undefined") {
+			rooms[room] = new Room(room);
+			rooms[room].reset();
+		}
+		rooms[room].users[socket.id] = new User(socket, room);
 
-		// display all connected players
-		socket.emit("new cardstacks", game.getAllCardStacks(socket));
+		io.in(room).emit("user count", Object.keys(rooms[room].users).length);
 
-		// handle command
-		socket.on("command", function(data) {
-			l("Command from id=" + socket.id + " > " + data);
-			Command.executeMultiple(data, socket.id);
-		});
+		// join the game if it hasn't started
+		if(!rooms[room].game.playing) {
+			// add new user to other players
+			rooms[room].users[socket.id].resetHand()
+			socket.to(room).emit("new cardstack", {title: rooms[room].users[socket.id].name + "'s hand", id: rooms[room].users[socket.id].hand.id, display: DISPLAY.alternate});
 
-		socket.on("play card", function(data){
-			var cardID = data.cardID.replace("card-", "");
-			var origin = data.origin.replace("cardstack-", "");
-			var destination = data.destination.replace("cardstack-", "");
-			movingCard = new Card(Card.getValueFromID(cardID), Card.getSuitFromID(cardID));
-			l(socket.id + " moving " + movingCard.toString() + " from " + origin + " to " + destination);
+			// display all connected players
+			socket.emit("new cardstacks", rooms[room].game.getAllCardStacks(socket));
 
-			// play card logic TODO: functionalise
-			if (origin == destination) {
-				// Nothing move, do nothing
-				l("Origin = destination, no move.")
-				return;
-			} else if (origin == "deck"){
-				if (destination == socket.id) {
-					// force taking from the top of the deck
-					users[socket.id].hand.addCardToTop(game.deck.playCard(game.deck.cards[0]));
-					l("Moved from deck to hand.")
-				} else {
-					// can only pass to yourself, use penalty button
-					// to penalise other players
-					l("Can't move from deck to " + destination)
-				}
-			} else if (origin == socket.id) {
-				if (users[socket.id].hand.hasCard(movingCard)){
-					if (destination == "pile"){
-						// can move from hand to play cards.
-						game.pile.addCardToTop(users[socket.id].hand.playCard(movingCard))
-						l("Moved from hand to pile.")
+			// handle command
+			socket.on("command", function(data) {
+				l("Command from id=" + socket.id + " > " + data);
+				Command.executeMultiple(data, room, socket.id);
+			});
+
+			socket.on("play card", function(data){
+				var cardID = data.cardID.replace("card-", "");
+				var origin = data.origin.replace("cardstack-", "");
+				var destination = data.destination.replace("cardstack-", "");
+				movingCard = new Card(Card.getValueFromID(cardID), Card.getSuitFromID(cardID));
+				l(socket.id + " moving " + movingCard.toString() + " from " + origin + " to " + destination);
+
+				// play card logic TODO: functionalise
+				if (origin == destination) {
+					// Nothing move, do nothing
+					l("Origin = destination, no move.")
+					return;
+				} else if (origin == "deck"){
+					if (destination == socket.id) {
+						// force taking from the top of the deck
+						rooms[room].users[socket.id].hand.addCardToTop(rooms[room].game.deck.playCard(rooms[room].game.deck.cards[0]));
+						l("Moved from deck to hand.")
 					} else {
-						// can move from hand to other hand for specific rules (IMPLEMENT LATER.)
-						// for now, can't do that.
-						l("Can't move from hand to " + destination)
+						// can only pass to yourself, use penalty button
+						// to penalise other players
+						l("Can't move from deck to " + destination)
 					}
+				} else if (origin == socket.id) {
+					if (rooms[room].users[socket.id].hand.hasCard(movingCard)){
+						if (destination == "pile"){
+							// can move from hand to play cards.
+							rooms[room].game.pile.addCardToTop(rooms[room].users[socket.id].hand.playCard(movingCard))
+							l("Moved from hand to pile.")
+						} else {
+							// can move from hand to other hand for specific rules (IMPLEMENT LATER.)
+							// for now, can't do that.
+							l("Can't move from hand to " + destination)
+						}
+					} else {
+						// you don't have that card
+						// no penalty.
+						// make a big EXCEPTION because how would this happen?
+						l("Hand doesn't have that card.")
+					}
+				} else if (origin == "pile") {
+					// can't move cards from the pile.
+					l("Can't move cards from the pile.")
 				} else {
-					// you don't have that card
-					// no penalty.
-					// make a big EXCEPTION because how would this happen?
-					l("Hand doesn't have that card.")
+					// attempted move from another player's hand.
+					// can't do that.
+					l("Can't move cards from other hands.");
 				}
-			} else if (origin == "pile") {
-				// can't move cards from the pile.
-				l("Can't move cards from the pile.")
-			} else {
-				// attempted move from another player's hand.
-				// can't do that.
-				l("Can't move cards from other hands.");
-			}
-		});
-	} else {
-		// spectator mode, join next round
-		game.displayAll(socket)
-	}
+			});
 
-	socket.on("disconnect", function(){
-		try {
-			io.emit("del cardstack", {id: users[socket.id].hand.id});
-		} catch(err) {} // if the user was a spectator, does not have a hand.
-		io.emit("user count", Object.keys(users).length);
-		delete users[socket.id];
-		l("Disconnected from client id=" + socket.id + "");
+			socket.on("disconnect", function(){
+				socket.leave(room);
+				try {
+					io.to(room).emit("del cardstack", {id: rooms[room].users[socket.id].hand.id});
+				} catch(err) {} // if the user was a spectator, does not have a hand.
+				delete rooms[room].users[socket.id];
+				io.in(room).emit("user count", Object.keys(rooms[room].users).length);
+				if(rooms[room].users.length === 0){
+					delete rooms[room];
+					l("Room '" + room + "' closed.")
+				}
+				l("Disconnected from client id=" + socket.id + "");
+			});
+		} else {
+			// spectator mode, join next round
+			rooms[room].game.displayAll(socket)
+		}
 	});
 });
 
@@ -237,23 +272,23 @@ class Command {
 		return this.aliases.contains(str);
 	}
 	// executes comma separated commands
-	static executeMultiple(str, userID) {
+	static executeMultiple(str, room, userID) {
 		var output = [];
 		str.split(", ").forEach(function(piece){
-			output.push(Command.execute(piece, userID));
+			output.push(Command.execute(piece, room, userID));
 		});
 		//return output.join(BREAK);
 		// TODO: command logging
 	}
 	// executes single command
-	static execute(str, userID){
+	static execute(str, room, userID){
 		var words = str.striped().sanitise().split(" ");
 		words = Card.parse(words);
 
 		Object.keys(commands).forEach(function(name){
 			if(commands[name].isAlias(words[0])){
 				i("Executing " + name + "...");
-				commands[name].toRun(words.slice(1), userID);
+				commands[name].toRun(words.slice(1), room, userID);
 			}
 		});
 	}
@@ -262,35 +297,36 @@ class Command {
 commands = {reset: new Command(["reset"], function(){
 				init();
 			}),	refresh: new Command(["refresh"], refreshClients
-			),	begin: new Command(["begin", "start"], function(){
-				game.start();
-			}), sort: new Command(["sort"], function(args, userID){
+			),	begin: new Command(["begin", "start"], function(args, room){
+				rooms[room].game.start();
+			}), sort: new Command(["sort"], function(args, room, userID){
 				if (args[0] == "hand"){
-					users[userID].hand.sort();
+					rooms[room].users[userID].hand.sort();
 				}
-			}), play: new Command(["play", "use"], function(args, userID){
+			}), play: new Command(["play", "use"], function(args, room, userID){
 				if(args.length == 1 && args[0] instanceof Card){
-					if (users[userID].hand.hasCard(args[0])){
-						game.pile.addCardToTop(users[userID].hand.playCard(args[0]));
+					if (rooms[room].users[userID].hand.hasCard(args[0])){
+						rooms[room].game.pile.addCardToTop(rooms[room].users[userID].hand.playCard(args[0]));
 					} else {
 						// don't have that card!
 						// TODO: Penalties
 					}
 				}
 			}), pass: new Command(["pass"], function(args, userID){
-				users[userID].hand.addCardToTop(game.deck.playCard(game.deck.cards[0]));
-			}), theme: new Command(["theme"], function(args, userID){
-				users[userID].socket.emit("theme", args[0]);
+				rooms[room].users[userID].hand.addCardToTop(rooms[room].game.deck.playCard(game.deck.cards[0]));
+			}), theme: new Command(["theme"], function(args, room, userID){
+				rooms[room].users[userID].socket.emit("theme", args[0]);
 			}), users: new Command(["users"], function() {
 				// Debug command comparing socket.io's users and my tracked users
-				console.log(users);
+				console.log(rooms);
 				console.log(Object.keys(io.sockets.sockets));
 			})
 		};
 
 class CardStack {
-	constructor(id) {
+	constructor(id, room) {
 		this.userID = id;
+		this.room = room;
 		this.id = "cardstack-" + id; // used for display
 		this.cards = [];
 		this.clearDisplay();
@@ -314,7 +350,7 @@ class CardStack {
 	};
 
 	updateDisplay() {
-		io.emit("clear cardstack", {id: this.id});
+		io.in(this.room).emit("clear cardstack", {id: this.id});
 		this.displayHand();
 		this.displayCount();
 		l("Updating display '" + this.id + "'");
@@ -327,13 +363,13 @@ class CardStack {
 	}
 
 	displayRemoveCard(card) {
-		io.emit("display remove card", {id: this.id, cardID: card.id});
+		io.in(this.room).emit("display remove card", {id: this.id, cardID: card.id});
 		l("Removing card in '" + this.id + "'");
 	}
 
 	// displays whole hand.
 	displayHand() {
-		io.emit("display cards", {id: this.id, cards: this.toDisplay()});
+		io.in(this.room).emit("display cards", {id: this.id, cards: this.toDisplay()});
 		l("Displaying hand '" + this.id + "'");
 	}
 
@@ -346,13 +382,13 @@ class CardStack {
 	}
 	// card count
 	displayCount() {
-		io.emit("display cardcount", {id: this.id, count: this.length});
+		io.in(this.room).emit("display cardcount", {id: this.id, count: this.length});
 	}
 
 	clearDisplay() {
-		io.emit("clear cardstack", {id: this.id});
+		io.in(this.room).emit("clear cardstack", {id: this.id});
 		// hide card count
-		io.emit("display cardcount", {id: this.id});
+		io.in(this.room).emit("display cardcount", {id: this.id});
 		l("Cleared display of " + this.id)
 	}
 
@@ -372,14 +408,14 @@ class CardStack {
 
 	addCardToBottom(card) {
 		this.cards.push(card);
-		io.emit("display card bottom", {id: this.id, card: card.toDisplay()})
+		io.in(this.room).emit("display card bottom", {id: this.id, card: card.toDisplay()})
 		this.displayCount();
 		l("Adding card to bottom of " + this.id);
 	}
 
 	addCardToTop(card){
 		this.cards.unshift(card);
-		io.emit("display card top", {id: this.id, card: card.toDisplay()});
+		io.in(this.room).emit("display card top", {id: this.id, card: card.toDisplay()});
 		this.displayCount();
 		l("Adding card to top of " + this.id);
 	}
@@ -413,8 +449,8 @@ var useJokers = false;
 
 
 class Deck extends CardStack {
-	constructor(id) {
-		super(id);
+	constructor(id, room) {
+		super(id, room);
 		l("Deck '" + this.id + "' created.");
 	};
 
@@ -557,18 +593,20 @@ class Card {
 }
 
 class MaoGame {
-	constructor() {
+	constructor(room) {
+		console.log("'" + room + "'")
 		i("Game initialised");
+		this.room = room;
 		this.reset();
 		this.playing = false;
 	}
 
 	reset() {
-		this.deck = new Deck("deck");
-		this.pile = new CardStack("pile");
-		Object.keys(users).forEach(function(id, index) {
-			users[id].resetHand();
-		});
+		this.deck = new Deck("deck", this.room);
+		this.pile = new CardStack("pile", this.room);
+		Object.keys(rooms[this.room].users).forEach(function(id, index) {
+			rooms[this.room].users[id].resetHand();
+		}, this);
 		i("All cardstacks reset.")
 	}
 
@@ -589,14 +627,12 @@ class MaoGame {
 	}
 
 	allDraw(num) {
-		var deck = this.deck;
 		// deal 5 cards to each player and update the deck
-		Object.keys(users).forEach(function(id, index) {
+		Object.keys(rooms[this.room].users).forEach(function(id, index) {
 			for(let n = 0; n < num; n++){
-				users[id].hand.addCardToTop(deck.playCard(deck.cards[0]));
+				rooms[this.room].users[id].hand.addCardToTop(this.deck.playCard(this.deck.cards[0]));
 			}
-		});
-		this.deck = deck;
+		}, this);
 	}
 
 	// set up table for new user (pile, deck, other users)
@@ -605,18 +641,18 @@ class MaoGame {
 		data.push({title: "pile", id: this.pile.id, display: DISPLAY.pile});
 		data.push({title: "deck", id: this.deck.id, display: DISPLAY.deck});
 
-		Object.keys(users).forEach(function(id, index) {
+		Object.keys(rooms[this.room].users).forEach(function(id, index) {
 			var disp = DISPLAY.alternate;
-			var name = users[id].name + "'s";
+			var name = rooms[this.room].users[id].name + "'s";
 			if(id == socket.id){
 				disp = DISPLAY.user;
 				name = "your"
 			}
 			try	{
-				data.push({title: name + " hand", id: users[id].hand.id, display: disp});
+				data.push({title: name + " hand", id: rooms[this.room].users[id].hand.id, display: disp});
 			} catch(err) {}; 
 			// don't need to send hand if they don't have one (spectators)
-		});
+		}, this);
 		return data;
 	}
 
@@ -625,9 +661,9 @@ class MaoGame {
 		socket.emit("new cardstacks", this.getAllCardStacks(socket));
 		this.deck.refreshDisplay(socket);
 		this.pile.refreshDisplay(socket);
-		Object.keys(users).forEach(function(id, index) {
+		Object.keys(rooms[this.room].users).forEach(function(id, index) {
 			try {
-				users[id].hand.refreshDisplay(socket);
+				rooms[this.room].users[id].hand.refreshDisplay(socket);
 			} catch(err) {}; // no need to refresh display if they don't have a hand
 		});
 	};

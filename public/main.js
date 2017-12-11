@@ -170,7 +170,7 @@ function displayCard(card) {
 	var x = (Math.random()*4)-2;
 	var y = (Math.random()*4)-2;
 	var transform = "transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px); -webkit-transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px); -moz-transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px)";
-	return "<li class='card " + card.colour + "' id='" + card.id + "' draggable='true' ondragstart='dragCard(event)]' style='" + transform + "'>" + card.str + "</li>";
+	return "<li class='card " + card.colour + "' id='" + card.id + "' draggable='true' ondragstart='dragCard(event)' style='" + transform + "'>" + card.str + "</li>";
 }
 
 ///// Drag and drop functionality

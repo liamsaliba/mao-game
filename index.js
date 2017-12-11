@@ -132,6 +132,7 @@ class User {
 		this.resetHand();
 		// TODO: add method to make new name
 		this.name = this.id.slice(0, 6);
+
 	}
 	get id() {
 		return this.socket.id;
@@ -492,9 +493,9 @@ class Card {
 	toDisplayString() {
 		// fix a formatting issue
 		var value = this.value;
-		var suit = this.suit;
-		if(value == "") value = "<br>";
-		else if(suit == "") suit = "<br>";
+		var suit = this.suit + "&#xFE0E";
+		if(this.value == "") value = "<br>";
+		else if(this.suit == "") suit = "<br>";
 		return [value, suit].join("<br>");
 	};
 	// info used to display a specific card
@@ -603,7 +604,7 @@ class MaoGame {
 		var data = []
 		data.push({title: "pile", id: this.pile.id, display: DISPLAY.pile});
 		data.push({title: "deck", id: this.deck.id, display: DISPLAY.deck});
-
+		
 		Object.keys(users).forEach(function(id, index) {
 			var disp = DISPLAY.alternate;
 			var name = users[id].name + "'s";

@@ -62,12 +62,13 @@ socket.on("connect", function() {
 	$("#connection-info").addClass("connected");
 	$("#info-online").html("connected");
 	$(".cardstack-container").remove(); // resets display
-	id = socket.id;
+	$("#info-id").html("id=" + socket.id);
 });
 
 socket.on("reconnect", function(){
 	console.log("reconnected!");
 	// TODO: handle continue
+	// this is very broken atm
 })
 
 socket.on("disconnect", function() {
@@ -77,10 +78,6 @@ socket.on("disconnect", function() {
 });
 // could make this serverside but meh
 socket.on("theme", setTheme)
-
-socket.on("broadcast", function(data) {
-	output(data, FORMAT.IMPORTANT)
-});
 
 socket.on("output", function(data) {
 	output(data.str, data.format);
@@ -99,13 +96,8 @@ socket.on("remove placeholder", function(){
 });
 
 socket.on("clear table", function() {
-	$("#table *").remove();
+	$("#table cardstack-container").remove();
 });
-
-socket.on("id", function(data) {
-	id = data.id;
-	$("#info-id").html("id=" + id);
-})
 
 $(document).ready(function() { init(); })
 
@@ -117,25 +109,51 @@ window.onunload = function() {
 	socket.disconnect();
 };
 
-socket.on("new cardstack", newCardStack);
+socket.on("new cardstack", function(user){
+	newCardStack(user);
+	setTable();
+});
 
 socket.on("new cardstacks", function(data) {
 	data.forEach(function(user){
 		newCardStack(user);
 	});
+	setTable();
 });
-
+// list of ids by turn order
+var cardstacks = []
 function newCardStack(data) {
 	var stack = $("#table").append('<div class="cardstack-container ' + data.display + '" id="' + data.id + '" ondrop="dropCard(event)" ondragover="allowDrop(event)"><div class="cardstack-box"><div class="cardstack"></div></div><div class="cardstack-head"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small></div></div>')
-	if(data.display == "altuser"){
-		//$("#" + data.id).css({bottom: "30%", right: "55%"});
+	if(data.display == "user" || data.display == "altuser"){
+		cardstacks.push(data.id);
 	}
-//	.css({top: data.display.x, left: data.display.y});
+}
+
+function setTable(){
+	console.log("Setting table.")
+	var userIndex = -1;
+	cardstacks.forEach(function(id, index){
+		console.log(id + " : " + index);//console.log($(this).id);
+		el = $("#" + id)
+		if(userIndex > -1){
+			if(index == userIndex+1)
+				el.detach().prependTo("#altusers")
+			else {
+				el.detach().insertAfter("#altusers .cardstack-container:eq(" + (index - userIndex - 2) + ")");
+			}
+		} else if(id.replace("cardstack-", "") == socket.id) {
+			console.log("^^^ is user.")
+			userIndex = index;
+		} else {
+			el.detach().appendTo("#altusers");
+		}
+	});
 }
 
 
 socket.on("del cardstack", function(data){
 	$("#cardstack-" + data.id).remove();
+	setTable();
 });
 
 socket.on("display cardcount", function(data) {

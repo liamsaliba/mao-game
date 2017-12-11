@@ -68,6 +68,17 @@ main {
 	overflow: auto;
 }
 
+#altusers {
+	margin-top: 1rem;
+	text-align: center;
+}
+
+#altusers .cardstack-container {
+	position: static;
+	display: inline-block;
+	margin-right: 1rem;
+}
+
 .cardstack-container {
 	position: absolute;
 	display: block;

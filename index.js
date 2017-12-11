@@ -149,8 +149,6 @@ io.on('connection', (socket) => {
 	users[socket.id] = new User(socket); // TODO: users PER room
 	io.emit("user count", Object.keys(users).length);
 
-	socket.emit("id", {id: socket.id});
-
 	// join the game if it hasn't started
 	if(!game.playing) {
 		// add new user to other players
@@ -604,7 +602,7 @@ class MaoGame {
 		var data = []
 		data.push({title: "pile", id: this.pile.id, display: DISPLAY.pile});
 		data.push({title: "deck", id: this.deck.id, display: DISPLAY.deck});
-		
+
 		Object.keys(users).forEach(function(id, index) {
 			var disp = DISPLAY.alternate;
 			var name = users[id].name + "'s";

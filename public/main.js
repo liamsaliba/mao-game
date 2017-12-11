@@ -166,11 +166,7 @@ socket.on("display cards", function(data) {
 });
 
 function displayCard(card) {
-	var r = (Math.random()*10)-5;
-	var x = (Math.random()*4)-2;
-	var y = (Math.random()*4)-2;
-	var transform = "transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px); -webkit-transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px); -moz-transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px)";
-	return "<li class='card " + card.colour + "' id='" + card.id + "' draggable='true' ondragstart='dragCard(event)]' style='" + transform + "'>" + card.str + "</li>";
+	return "<li class='animated flipInY card " + card.colour + "' id='" + card.id + "' draggable='true' ondragstart='dragCard(event)'>" + card.str + "</li>";
 }
 
 ///// Drag and drop functionality

@@ -63,17 +63,18 @@ function updateUserCount(count){
 	if(count === undefined)
 		$("#info-online-count").html();
 	else
-		$("#info-online-count").html(count + " online");
+		$("#info-online-count").html(count + " in room");
 };
 
 var id;
 const socket = io.connect("/");
 
-if(window.location.pathname.slice(0, 6) == "/room/"){
-	socket.emit("join room", window.location.pathname.slice(6));
-} else{
-	socket.emit("join room", "");
-}
+var room = "";
+if(window.location.pathname.slice(0, 6) == "/room/")
+	room = window.location.pathname.slice(6);
+socket.emit("join room", room);
+$("#info-room").html("room=" + room);
+
 // socket.io debugging
 //localStorage.debug = "*";
 

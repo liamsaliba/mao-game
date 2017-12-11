@@ -13,14 +13,23 @@
 span {
 	display: inline-block;
 }
-
+html, body {
+	height: 100%;
+}
 body {
 	overflow: hidden;
 	background: #ddd;
+	display: flex;
+	flex-direction: column;
 }
 
-header {
-	margin: 10px;
+.container {
+	margin: 0.5em;
+}
+
+main {
+	flex-grow: 1;
+	position: relative;
 }
 
 #input {
@@ -41,44 +50,6 @@ header {
 	max-height: 5rem;
 }
 
-#table {
-	margin: 10px;
-	padding: 5px;
-	position: relative;
-}
-
-.cardstack-container {
-/*	position: absolute;
-	top: 0px;*/
-	display: block;
-	width: fit-content;
-	text-align: center;
-	margin: 0 auto;
-	margin-bottom: 1rem;
-}
-
-.cardstack {
-	background-color: #eee;
-	border-top: 2px #aaa solid;
-	padding: 0.2rem 1rem;
-	text-align: center;
-	display: inline-block;
-	margin: 0 auto;
-	min-height: 6rem;
-	min-width: 12rem;
-	-moz-box-shadow: 0 0 3px #999;
-	-webkit-box-shadow: 0 0 3px #999;
-	box-shadow: 0 0 3px #999;
-}
-
-.cardstack-head {
-	text-align: left;
-}
-
-.cardstack-box {
-	display: block;
-}
-
 .code {
 	color: #666;
 	font-style: italic;
@@ -89,6 +60,45 @@ header {
 	color: red;
 	font-weight: bold;
 	font-style: italic;
+}
+
+
+#table {
+	margin: 10px;
+	padding: 5px;
+	height: 100%;
+}
+
+.cardstack-container {
+	position: absolute;
+	display: block;
+	width: fit-content;
+	text-align: center;
+	margin: 0 auto;
+	margin-bottom: 1rem;
+}
+
+.cardstack {
+	border-top: 2px #aaa solid;
+	padding: 0.2rem 1rem;
+	text-align: center;
+	display: inline-block;
+	margin: 0 auto;
+	min-height: 6rem;
+	min-width: 12rem;
+}
+
+.cardstack-head {
+	text-align: left;
+}
+
+.cardstack-box {
+	display: block;
+	max-width: 90vw;
+	overflow-x: auto;
+	/* force one line hands */
+	overflow-y: hidden;
+	white-space: nowrap;
 }
 
 .card {
@@ -104,20 +114,19 @@ header {
 	line-height: 1.25rem;
 	text-align: left;
 	cursor: default;
-	-moz-box-shadow: 0 0 5px #888;
-	-webkit-box-shadow: 0 0 5px#888;
-	box-shadow: 0 0 5px #888;
+	-moz-box-shadow: 0 0 3px #999;
+	-webkit-box-shadow: 0 0 3px #999;
+	box-shadow: 0 0 3px #999;
 }
 
-/* for opponent hands + deck */
+/* small hands */
 .small .card, .altuser .card {
 	font-size: 1.2rem;
 	line-height: 1rem;
 	width: 2.45rem;
 	height: 3.5rem;
 }
-
-.altuser .cardstack {
+.small .cardstack, .altuser .cardstack {
 	min-height: 4.5rem;
 }
 
@@ -125,7 +134,7 @@ header {
 	margin-left: 6px;
 }
 
-
+/* suits */
 .red {
 	color: red;
 }
@@ -133,7 +142,7 @@ header {
 .black {
 	color: black;
 }
-
+/* card back */
 .back .card, .altuser .card, .deck .card {
 	/* set background image */
 	color: transparent;
@@ -141,11 +150,16 @@ header {
 	background-position: center;
 }
 
-.deck .cardstack {
+.deck .cardstack, .pile .cardstack {
+	border-top: none;
 	text-align: left;
 	position: relative;
 	min-width: 5rem;
 	padding: .2rem .5rem;
+}
+
+.deck .cardstack-head, .pile .cardstack-head {
+	display: none;
 }
 
 /* stack cards */
@@ -153,19 +167,15 @@ header {
 	position: absolute;
 }
 
-.cardstack-box {
-	overflow-y: hidden;
-	white-space: nowrap;
-}
-
+/* fadeout */
 .pile .cardstack-box {
 	max-width: 30rem;
 	overflow-x: hidden;
 }
 
 .pile, .deck, .altuser {
-	display: inline-block;
-	margin-right: 1rem;
+	/*display: inline-block;
+	margin-right: 1rem;*/
 }
 
 .pile .card {opacity: 0;}
@@ -179,6 +189,10 @@ header {
 .pile .card:nth-child(8) {opacity: 0.028;}
 .pile .card:nth-child(9) {opacity: 0.0168;}
 .pile .card:nth-child(10) {opacity: 0.01;}
+
+.deck .card:nth-child(1) {z-index: 3;}
+.deck .card:nth-child(2) {z-index: 2;}
+.deck .card:nth-child(3) {z-index: 1;}
 
 h1, h2, h3 {
 	display: inline-block;

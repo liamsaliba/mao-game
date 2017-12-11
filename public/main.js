@@ -125,7 +125,13 @@ socket.on("new cardstacks", function(data) {
 });
 
 function newCardStack(data) {
-	$("#table").append('<div class="cardstack-container ' + data.display + '" id="' + data.id + '" ondrop="dropCard(event)" ondragover="allowDrop(event)"><div class="cardstack-head"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small></div><div class="cardstack-box"><div class="cardstack"></div></div></div>');
+	var stack = $("#table").append('<div class="cardstack-container ' + data.display + '" id="' + data.id + '" ondrop="dropCard(event)" ondragover="allowDrop(event)"><div class="cardstack-head"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small></div><div class="cardstack-box"><div class="cardstack"></div></div></div>')
+	if(data.display == "deck"){
+		$("#" + data.id).css({top: "40%", left: "30%"});
+	} else if (data.display == "pile"){
+
+	}
+//	.css({top: data.display.x, left: data.display.y});
 }
 
 
@@ -134,10 +140,10 @@ socket.on("del cardstack", function(data){
 });
 
 socket.on("display cardcount", function(data) {
-	if(data.count === undefined)
+	/*if(data.count === undefined)
 		$("#" + data.id + " .cardstack-count").html("");
 	else
-		$("#" + data.id + " .cardstack-count").html("(" + data.count + " cards)");
+		$("#" + data.id + " .cardstack-count").html("(" + data.count + " cards)");*/
 })
 
 socket.on("clear cardstack", function(data) {
@@ -166,7 +172,7 @@ socket.on("display cards", function(data) {
 });
 
 function displayCard(card) {
-	var r = (Math.random()*10)-5;
+	var r = (Math.random()*8)-4;
 	var x = (Math.random()*4)-2;
 	var y = (Math.random()*4)-2;
 	var transform = "transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px); -webkit-transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px); -moz-transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px)";
@@ -202,6 +208,9 @@ function dropCard(event){
 	socket.emit("play card", {cardID: data[0], origin: data[1], destination: destination});
 	// server handles the rest.
 }
+
+
+
 
 function setTheme(data) {
 	if(data == "black" || data == "dark" || data == "night")

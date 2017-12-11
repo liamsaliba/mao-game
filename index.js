@@ -152,11 +152,10 @@ io.on('connection', (socket) => {
 
 	// join the game if it hasn't started
 	if(!game.playing) {
-		// display user's cardstack
-		socket.emit("new cardstack", {title: "your hand", id: users[socket.id].hand.id, display: DISPLAY.user});
+		// add new user to other players
 		socket.broadcast.emit("new cardstack", {title: users[socket.id].name + "'s hand", id: users[socket.id].hand.id, display: DISPLAY.alternate});
 
-		// display other connected players
+		// display all connected players
 		socket.emit("new cardstacks", game.getAllCardStacks(socket));
 
 		// handle command
@@ -606,8 +605,13 @@ class MaoGame {
 		data.push({title: "deck", id: this.deck.id, display: DISPLAY.deck});
 
 		Object.keys(users).forEach(function(id, index) {
-			if(id !== socket.id)
-				data.push({title: users[id].name + "'s hand", id: users[id].hand.id, display: DISPLAY.alternate});
+			var disp = DISPLAY.alternate;
+			var name = users[id].name + "'s";
+			if(id == socket.id){
+				disp = DISPLAY.user;
+				name = "your"
+			}
+			data.push({title: name + " hand", id: users[id].hand.id, display: disp});
 		});
 		return data;
 	}

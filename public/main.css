@@ -23,7 +23,7 @@ body {
 	flex-direction: column;
 }
 
-.container {
+.title-info {
 	margin: 0.5em;
 }
 
@@ -64,9 +64,8 @@ main {
 
 
 #table {
-	margin: 10px;
-	padding: 5px;
-	height: 100%;
+	min-height: 100%;
+	overflow: auto;
 }
 
 .cardstack-container {
@@ -79,7 +78,7 @@ main {
 }
 
 .cardstack {
-	border-top: 2px #aaa solid;
+	border-bottom: 2px #aaa solid;
 	padding: 0.2rem 1rem;
 	text-align: center;
 	display: inline-block;
@@ -89,7 +88,7 @@ main {
 }
 
 .cardstack-head {
-	text-align: left;
+	text-align: center;
 }
 
 .cardstack-box {
@@ -120,7 +119,7 @@ main {
 }
 
 /* small hands */
-.small .card, .altuser .card {
+.small .card, .altuser .card, .pile .card:not(:nth-child(1)) {
 	font-size: 1.2rem;
 	line-height: 1rem;
 	width: 2.45rem;
@@ -149,13 +148,28 @@ main {
 	background: url(https://thomaslmcdonald.files.wordpress.com/2010/09/3fbfd-beeback.jpg);
 	background-position: center;
 }
-
+/* bounding box */
 .deck .cardstack, .pile .cardstack {
-	border-top: none;
 	text-align: left;
 	position: relative;
 	min-width: 5rem;
-	padding: .2rem .5rem;
+	padding: 4rem 4rem;
+}
+
+.user .cardstack {
+	display: block;
+	padding-top: 3rem;
+	padding-left: 3rem;
+	padding-right: 3rem;
+}
+
+.cardstack {
+	border: 1px solid yellow;
+}
+
+/*center vertically */
+.deck .card, .pile .card{
+
 }
 
 .deck .cardstack-head, .pile .cardstack-head {
@@ -164,7 +178,16 @@ main {
 
 /* stack cards */
 .deck .card {
-	position: absolute;
+	margin-right: -3.66rem;
+}
+
+.deck .cardstack {
+	padding-right: 8rem;
+}
+
+/* spread cards */
+.pile .card {
+	margin-right: -0.8rem;
 }
 
 /* fadeout */
@@ -173,14 +196,28 @@ main {
 	overflow-x: hidden;
 }
 
-.pile, .deck, .altuser {
-	/*display: inline-block;
-	margin-right: 1rem;*/
+/* center horizontally */
+.user {
+	margin-left: auto;
+	margin-right: auto;
+	left: 0;
+	right: 0;
+	bottom: 0; /* float bottom */
 }
 
-.pile .card {opacity: 0;}
-.pile .card:nth-child(1) {opacity: 1;}
-.pile .card:nth-child(2) {opacity: 0.6;}
+.pile {
+	bottom: calc(50% - 7rem);
+	left: 55%;
+}
+
+.deck {
+	bottom: calc(50% - 7rem);
+	right: 55%;
+}
+
+.pile .card {opacity: 1;}
+.pile .card:nth-child(1) {opacity: 1; margin-right: 0rem; z-index: -1;}
+/*.pile .card:nth-child(2) {opacity: 0.6;}
 .pile .card:nth-child(3) {opacity: 0.36;}
 .pile .card:nth-child(4) {opacity: 0.216;}
 .pile .card:nth-child(5) {opacity: 0.1296;}
@@ -188,7 +225,7 @@ main {
 .pile .card:nth-child(7) {opacity: 0.046656;}
 .pile .card:nth-child(8) {opacity: 0.028;}
 .pile .card:nth-child(9) {opacity: 0.0168;}
-.pile .card:nth-child(10) {opacity: 0.01;}
+.pile .card:nth-child(10) {opacity: 0.01;}*/
 
 .deck .card:nth-child(1) {z-index: 3;}
 .deck .card:nth-child(2) {z-index: 2;}

@@ -1,7 +1,7 @@
 {
-  "name": "im-a-messenger",
+  "name": "mao-game",
   "version": "0.0.0",
-  "description": "Instant Messager",
+  "description": "Online Card Game of Mao",
   "main": "index.js",
   "author": "Liam Saliba",
   "private": true,

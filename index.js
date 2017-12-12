@@ -256,12 +256,13 @@ io.on('connection', (socket) => {
 			try {
 				delete rooms[room].users[socket.id];
 				io.in(room).emit("user count", Object.keys(rooms[room].users).length);
+				if(Object.keys(rooms[room].users).length === 0){
+					delete rooms[room];
+					l("Room '" + room + "' closed.")
+				}
 			} catch(err) {} // if user has been deleted already, don't crash.
 			
-			if(rooms[room].users.length === 0){
-				delete rooms[room];
-				l("Room '" + room + "' closed.")
-			}
+			
 			l("Disconnected from client id=" + socket.id + "");
 		});
 	});

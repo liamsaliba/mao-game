@@ -535,7 +535,7 @@ class Card {
 	toDisplayString() {
 		// fix a formatting issue
 		var value = this.value;
-		var suit = this.suit + "&#xFE0E";
+		var suit = this.suit + "&#xFE0E;";
 		if(this.value == "") value = "<br>";
 		else if(this.suit == "") suit = "<br>";
 		return [value, suit].join("<br>");

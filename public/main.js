@@ -228,6 +228,8 @@ function displayCard(card, id) {
 	return "<li class='card " + card.colour + "' id='" + card.id + "' draggable=" + draggable + " ondragstart='dragCard(event)' style='" + transform + "'>" + card.str + "</li>";
 }
 
+window.addEventListener('touchmove', function() {})
+
 ///// Drag and drop functionality
 function dragCard(event){
 	// sets the data that is to be dragged, by the ID of the element.

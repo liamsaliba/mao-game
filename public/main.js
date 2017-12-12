@@ -143,7 +143,10 @@ socket.on("new cardstacks", function(data) {
 // list of ids by turn order
 var cardstacks = []
 function newCardStack(data) {
-	var stack = $("#table").append('<div class="cardstack-container ' + data.display + '" id="' + data.id + '" ondrop="dropCard(event)" ondragover="allowDrop(event)"><div class="cardstack-box"><div class="cardstack"></div></div><div class="cardstack-head"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small></div></div>')
+	var drop = "";
+	if(data.display == "user" || data.display == "pile")
+		drop = ' ondrop="dropCard(event)" ondragover="allowDrop(event)"';
+	var stack = $("#table").append('<div class="cardstack-container ' + data.display + '" id="' + data.id + drop + '"><div class="cardstack-box"><div class="cardstack"></div></div><div class="cardstack-head"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small></div></div>')
 	if(data.display == "user" || data.display == "altuser"){
 		cardstacks.push(data.id);
 	}
@@ -178,10 +181,10 @@ socket.on("del cardstack", function(data){
 });
 
 socket.on("display cardcount", function(data) {
-	/*if(data.count === undefined)
+	if(data.count === undefined)
 		$("#" + data.id + " .cardstack-count").html("");
 	else
-		$("#" + data.id + " .cardstack-count").html("(" + data.count + " cards)");*/
+		$("#" + data.id + " .cardstack-count").html("(" + data.count + ")");
 })
 
 socket.on("clear cardstack", function(data) {
@@ -196,25 +199,27 @@ socket.on("display remove card", function(data) {
 });
 
 socket.on("display card top", function(data) {
-	$("#" + data.id + " .cardstack").prepend(displayCard(data.card));
+	$("#" + data.id + " .cardstack").prepend(displayCard(data.card, data.id));
 });
 
 socket.on("display card bottom", function(data) {
-	$("#" + data.id + " .cardstack").append(displayCard(data.card));
+	$("#" + data.id + " .cardstack").append(displayCard(data.card, data.id));
 });
 
 socket.on("display cards", function(data) {
 	for (index in data.cards){
-		$("#" + data.id + " .cardstack").append(displayCard(data.cards[index]));
+		$("#" + data.id + " .cardstack").append(displayCard(data.cards[index], data.id));
 	}
 });
 
-function displayCard(card) {
+function displayCard(card, id) {
 	var r = (Math.random()*8)-4;
 	var x = (Math.random()*4)-2;
 	var y = (Math.random()*4)-2;
 	var transform = "transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px); -webkit-transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px); -moz-transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px)";
-	return "<li class='card " + card.colour + "' id='" + card.id + "' draggable='true' ondragstart='dragCard(event)' style='" + transform + "'>" + card.str + "</li>";
+	var draggable = false;
+	if ($("#" + id).hasClass("user") || $("#" + id).hasClass("deck")) draggable = true;
+	return "<li class='card " + card.colour + "' id='" + card.id + "' draggable=" + draggable + " ondragstart='dragCard(event)' style='" + transform + "'>" + card.str + "</li>";
 }
 
 ///// Drag and drop functionality

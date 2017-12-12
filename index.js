@@ -246,8 +246,11 @@ io.on('connection', (socket) => {
 				try {
 					io.to(room).emit("del cardstack", {id: rooms[room].users[socket.id].hand.id});
 				} catch(err) {} // if the user was a spectator, does not have a hand.
-				delete rooms[room].users[socket.id];
-				io.in(room).emit("user count", Object.keys(rooms[room].users).length);
+				try {
+					delete rooms[room].users[socket.id];
+					io.in(room).emit("user count", Object.keys(rooms[room].users).length);
+				} catch(err) {} // if user has been deleted already, don't crash.
+				
 				if(rooms[room].users.length === 0){
 					delete rooms[room];
 					l("Room '" + room + "' closed.")
@@ -665,6 +668,6 @@ class MaoGame {
 			try {
 				rooms[this.room].users[id].hand.refreshDisplay(socket);
 			} catch(err) {}; // no need to refresh display if they don't have a hand
-		});
+		}, this);
 	};
 }

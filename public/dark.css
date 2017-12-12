@@ -23,3 +23,7 @@ body {
 input {
 	color: #fefefe;
 }
+
+header {
+	background: linear-gradient(to bottom, #000 0%, #333 100%);
+}

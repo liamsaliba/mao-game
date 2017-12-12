@@ -50,8 +50,7 @@ main {
 	text-align: center;
 	background-color: #ccc;
 	padding: 5px;
-	min-height: 1rem;
-	max-height: 5rem;
+	height: 5rem;
 }
 
 .code {
@@ -131,6 +130,7 @@ main {
 	-moz-box-shadow: 0 0 3px #999;
 	-webkit-box-shadow: 0 0 3px #999;
 	box-shadow: 0 0 3px #999;
+	margin-right: -0.5rem;
 }
 
 /* small hands */
@@ -201,6 +201,19 @@ main {
 .pile .cardstack-box {
 	max-width: 30rem;
 	overflow-x: hidden;
+}
+
+.deck .card, .user .card {
+	cursor: move;
+	cursor: grab;
+	cursor: -moz-grab;
+    cursor: -webkit-grab;
+}
+
+.deck .card:active, .user .card:active {
+	cursor: grabbing;
+	cursor: -moz-grabbing;
+    cursor: -webkit-grabbing;
 }
 
 /* center horizontally */

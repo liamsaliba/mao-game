@@ -80,6 +80,7 @@ $("#info-room").html("room=" + room);
 
 socket.on("connect", function() {
 	$("#connection-info").addClass("connected");
+	$('meta[name=theme-color').attr('content', '#266d26')
 	$("#info-online").html("connected");
 	$(".cardstack-container").remove(); // resets display
 	$("#info-id").html("id=" + socket.id);
@@ -93,6 +94,7 @@ socket.on("reconnect", function(){
 
 socket.on("disconnect", function() {
 	$("#connection-info").removeClass("connected");
+	$('meta[name=theme-color').attr('content', '#6d2626')
 	$("#info-online").html("disconnected");
 	updateUserCount();
 });
@@ -146,7 +148,7 @@ function newCardStack(data) {
 	var drop = "";
 	if(data.display == "user" || data.display == "pile")
 		drop = ' ondrop="dropCard(event)" ondragover="allowDrop(event)"';
-	var stack = $("#table").append('<div class="cardstack-container ' + data.display + '" id="' + data.id + drop + '"><div class="cardstack-box"><div class="cardstack"></div></div><div class="cardstack-head"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small></div></div>')
+	var stack = $("#table").append('<div class="cardstack-container ' + data.display + '" id="' + data.id + '"' + drop + '><div class="cardstack-box"><div class="cardstack"></div></div><div class="cardstack-head"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small></div></div>')
 	if(data.display == "user" || data.display == "altuser"){
 		cardstacks.push(data.id);
 	}
@@ -226,12 +228,15 @@ function displayCard(card, id) {
 function dragCard(event){
 	// sets the data that is to be dragged, by the ID of the element.
 	event.dataTransfer.setData("text\\plain", event.target.id + ";" + event.path[3].id);
+	event.dataTransfer.dropEffect = "move";
 	setTimeout(function() {event.target.style.opacity = .01}, 10);
 }
 
 // Displays drop cursor
 function allowDrop(event) {
 	event.preventDefault(); // data/elements cannot be dropped in other elements by default
+	// Set the dropEffect to move
+ 	event.dataTransfer.dropEffect = "move"
 }
 
 // Reset opacity on cancel / mistake

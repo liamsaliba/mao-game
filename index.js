@@ -189,6 +189,7 @@ io.on('connection', (socket) => {
 			// handle command
 			socket.on("command", function(data) {
 				l("Command from id=" + socket.id + " > " + data);
+				socket.in(room).emit("message", {name: rooms[room].users[socket.id].name, id: socket.id, message: data}); // send as message to all regardless of command.
 				Command.executeMultiple(data, room, socket.id);
 			});
 
@@ -308,13 +309,13 @@ class Command {
 	}
 	// executes single command
 	static execute(str, room, userID){
-		var words = str.striped().sanitise().split(" ");
-		words = Card.parse(words);
+		var command = str.striped().sanitise();
 
 		Object.keys(commands).forEach(function(name){
-			if(commands[name].isAlias(words[0])){
+			if(commands[name].isAlias(command)){
 				i("Executing " + name + "...");
-				commands[name].toRun(words.slice(1), room, userID);
+				commands[name].toRun(room, userID);
+				return;
 			}
 		});
 	}
@@ -323,33 +324,16 @@ class Command {
 commands = {reset: new Command(["reset"], function(){
 				init();
 			}),	refresh: new Command(["refresh"], refreshClients
-			),	begin: new Command(["begin", "start"], function(args, room, userID){
+			),	begin: new Command(["begin", "start"], function(room, userID){
 				if(Object.keys(rooms[room].users).length > 1){
 					rooms[room].game.start(userID);
 				} else {
 					l("Not enough players to start game in " + room);
 				}
-			}), sort: new Command(["sort"], function(args, room, userID){
-				if (args[0] == "hand"){
-					rooms[room].users[userID].hand.sort();
-				}
-			}), play: new Command(["play", "use"], function(args, room, userID){
-				if(args.length == 1 && args[0] instanceof Card){
-					if (rooms[room].users[userID].hand.hasCard(args[0])){
-						rooms[room].game.pile.addCardToTop(rooms[room].users[userID].hand.playCard(args[0]));
-					} else {
-						// don't have that card!
-						// TODO: Penalties
-					}
-				}
-			}), pass: new Command(["pass"], function(args, userID){
-				rooms[room].users[userID].hand.addCardToTop(rooms[room].game.deck.playCard(game.deck.cards[0]));
-			}), theme: new Command(["theme"], function(args, room, userID){
-				rooms[room].users[userID].socket.emit("theme", args[0]);
-			}), users: new Command(["users"], function() {
-				// Debug command comparing socket.io's users and my tracked users
-				console.log(rooms);
-				console.log(Object.keys(io.sockets.sockets));
+			}), whitetheme: new Command(["theme default", "theme white", "theme normal", "theme light", "default theme", "white theme", "light theme", "normal theme"], function(room, userID){
+				rooms[room].users[userID].socket.emit("black theme", false);
+			}), blacktheme: new Command(["theme black", "theme night", "theme dark", "black theme", "night theme", "dark theme"], function(room, userID){
+				rooms[room].users[userID].socket.emit("black theme", true);
 			})
 		};
 
@@ -584,41 +568,6 @@ class Card {
 
 	static getValueFromID(id) {
 		return VALUES[id%14];
-	}
-
-	// detects and converts string to Card object
-	static parse(words) {
-		var wordsl = words;
-		var card;
-		// process words (enumerate) for each word
-		for (let [index, word] of words.entries()) {
-			// if it's a suit
-			SUITS.forEach(function(suit){
-				if (suit.isAlias(word)) {
-					if (wordsl[index - 1] == "of") {
-						VALUES.forEach(function(value){
-							if(value.isAlias(wordsl[index - 2])){
-								words[index - 2] = new Card(value, suit);
-								words.remove(index);
-								words.remove(index - 1);
-								return; // "Ace of hearts"
-							}
-						});
-					}
-					else {
-						VALUES.forEach(function(value){
-							if(value.isAlias(wordsl[index - 1])){
-								words[index - 1] = new Card(value, suit);
-								words.remove(index);
-								return; // Ace Hearts
-							}
-						});
-					return;
-					}
-				}
-			});
-		};
-		return words;
 	}
 }
 

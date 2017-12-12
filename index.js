@@ -199,6 +199,15 @@ io.on('connection', (socket) => {
 				movingCard = new Card(Card.getValueFromID(cardID), Card.getSuitFromID(cardID));
 				l(socket.id + " moving " + movingCard.toString() + " from " + origin + " to " + destination);
 
+				if(socket.id == rooms[room].game.turn){
+					i(socket.id + " playing in turn.");
+				} else {
+					i(socket.id + " playing OUT of turn.");
+					// penalise
+					rooms[room].users[socket.id].hand.addCardToTop(rooms[room].game.deck.playCard(rooms[room].game.deck.cards[0]));
+					return;
+				}
+				// try catch throw exceptions
 				// play card logic TODO: functionalise
 				if (origin == destination) {
 					// Nothing move, do nothing
@@ -239,6 +248,8 @@ io.on('connection', (socket) => {
 					// can't do that.
 					l("Can't move cards from other hands.");
 				}
+				// after successful turn, advance it.
+				rooms[room].game.nextTurn();
 			});
 
 			socket.on("sort hand", function(){
@@ -256,9 +267,17 @@ io.on('connection', (socket) => {
 			try {
 				delete rooms[room].users[socket.id];
 				io.in(room).emit("user count", Object.keys(rooms[room].users).length);
-				if(Object.keys(rooms[room].users).length === 0){
+				l(socket.id + " removed from " + room)
+				if(Object.keys(rooms[room].users).length === 0 ){
 					delete rooms[room];
-					l("Room '" + room + "' closed.")
+					l("Room '" + room + "' closed - noone in room")
+				} // catch as room may not exist
+				// remove player from queue
+				rooms[room].game.queue.remove(rooms[room].game.queue.indexOf(socket.id))
+				// end game if only 1 player left.
+				if(rooms[room].game.queue.length < 2){
+					rooms[room].game.reset();
+					l(room + " game ended, not enough players.")
 				}
 			} catch(err) {} // if user has been deleted already, don't crash.
 			
@@ -305,7 +324,11 @@ commands = {reset: new Command(["reset"], function(){
 				init();
 			}),	refresh: new Command(["refresh"], refreshClients
 			),	begin: new Command(["begin", "start"], function(args, room, userID){
-				rooms[room].game.start(userID);
+				if(Object.keys(rooms[room].users).length > 1){
+					rooms[room].game.start(userID);
+				} else {
+					l("Not enough players to start game in " + room);
+				}
 			}), sort: new Command(["sort"], function(args, room, userID){
 				if (args[0] == "hand"){
 					rooms[room].users[userID].hand.sort();
@@ -604,8 +627,6 @@ class MaoGame {
 		i("Game initialised in room " + room);
 		this.room = room;
 		this.reset();
-		this.playing = false;
-		this.userQueue; // queue of users
 	}
 
 	reset() {
@@ -614,7 +635,9 @@ class MaoGame {
 		Object.keys(rooms[this.room].users).forEach(function(id, index) {
 			rooms[this.room].users[id].resetHand();
 		}, this);
-		i("All cardstacks reset.")
+		this.playing = false;
+		this.queue = [];
+		i("Game in room '" + this.room + "' reset.")
 	}
 
 	start(userID) {
@@ -636,17 +659,26 @@ class MaoGame {
 
 	generateQueue(firstUser){ // similar to setTable on clientside
 		var queue = []; // main queue
-		var queueLast = []; // these play BEFORE firstUser
-		Object.keys(rooms[this.room].users).forEach(function(id, index){
-
+		var queueEnd = []; // these play BEFORE firstUser
+		Object.keys(rooms[this.room].users).forEach(function(userID, index){
+			if (userID == firstUser || queue.length > 0){
+				queue.push(userID);
+			} else {
+				queueEnd.push(userID);
+			}
 		}, this);
+		l("Queue generated - starting with " + firstUser);
+		return queue.concat(queueEnd);
 	}
 
 	nextTurn() {
-		console.log(rooms[room].users)
-		// generate user queue (because it can change per turn)
-		
-		// then advance the queue	
+		// move played user to bottom of queue
+		this.queue.push(this.queue.shift());
+		console.log("It's the turn of " + this.turn)		
+	}
+
+	get turn() {
+		return this.queue[0];
 	}
 
 	allDraw(num) {

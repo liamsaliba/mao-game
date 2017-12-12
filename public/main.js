@@ -59,6 +59,10 @@ function init() {
 	jInput.focus();
 }
 
+$("main").click(function(){
+	jInput.focus();
+})
+
 function updateUserCount(count){
 	if(count === undefined)
 		$("#info-online-count").html();

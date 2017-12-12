@@ -94,6 +94,7 @@ main {
 .cardstack {
 	border-bottom: 2px #aaa solid;
 	padding: 0.2rem 1rem;
+	padding-right: 1.5rem;
 	text-align: center;
 	display: inline-block;
 	margin: 0 auto;
@@ -107,7 +108,7 @@ main {
 
 .cardstack-box {
 	display: block;
-	max-width: 90vw;
+	max-width: 95vw;
 	overflow-x: auto;
 	/* force one line hands */
 	overflow-y: hidden;
@@ -175,8 +176,6 @@ main {
 .user .cardstack {
 	display: block;
 	padding-top: 3rem;
-	padding-left: 3rem;
-	padding-right: 3rem;
 }
 
 .deck .cardstack-head, .pile .cardstack-head {

@@ -241,6 +241,10 @@ io.on('connection', (socket) => {
 				}
 			});
 
+			socket.on("sort hand", function(){
+				rooms[room].users[socket.id].hand.sort();
+			})
+
 			socket.on("disconnect", function(){
 				socket.leave(room);
 				try {
@@ -300,8 +304,8 @@ class Command {
 commands = {reset: new Command(["reset"], function(){
 				init();
 			}),	refresh: new Command(["refresh"], refreshClients
-			),	begin: new Command(["begin", "start"], function(args, room){
-				rooms[room].game.start();
+			),	begin: new Command(["begin", "start"], function(args, room, userID){
+				rooms[room].game.start(userID);
 			}), sort: new Command(["sort"], function(args, room, userID){
 				if (args[0] == "hand"){
 					rooms[room].users[userID].hand.sort();
@@ -602,6 +606,7 @@ class MaoGame {
 		this.room = room;
 		this.reset();
 		this.playing = false;
+		this.turn;
 	}
 
 	reset() {
@@ -613,8 +618,9 @@ class MaoGame {
 		i("All cardstacks reset.")
 	}
 
-	start() {
+	start(userID) {
 		this.playing = true;
+		this.turn = userID;
 		i("Game started");
 		io.emit("remove placeholder");
 		this.reset();

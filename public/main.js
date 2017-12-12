@@ -149,6 +149,11 @@ function newCardStack(data) {
 	if(data.display == "user" || data.display == "pile")
 		drop = ' ondrop="dropCard(event)" ondragover="allowDrop(event)"';
 	var stack = $("#table").append('<div class="cardstack-container ' + data.display + '" id="' + data.id + '"' + drop + '><div class="cardstack-box"><div class="cardstack"></div></div><div class="cardstack-head"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small></div></div>')
+	if(data.display == "user"){
+		$("#" + data.id + " .cardstack-head").click(function(){
+			socket.emit("sort hand");
+		})
+	}
 	if(data.display == "user" || data.display == "altuser"){
 		cardstacks.push(data.id);
 	}

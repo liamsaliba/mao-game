@@ -2,8 +2,7 @@ var commandHistory = ["begin"]
 
 const jInput = $("#input")
 
-if(getCookie("theme") !== "")
-	setTheme(getCookie("theme"));
+setTheme(getCookie("theme") != "false");
 
 function getCookie(cname) {
     var name = cname + "=";
@@ -105,7 +104,11 @@ socket.on("disconnect", function() {
 	updateUserCount();
 });
 // could make this serverside but meh
-socket.on("theme", setTheme)
+socket.on("black theme", setTheme)
+
+socket.on("message", function(data){
+	console.log(data.name + ": " + data.message);
+})
 
 socket.on("output", function(data) {
 	output(data.str, data.format);
@@ -274,10 +277,11 @@ function dropCard(event){
 
 
 
-function setTheme(data) {
-	if(data == "black" || data == "dark" || data == "night")
+function setTheme(isBlack) {
+	if(isBlack){
 		$('link[rel=stylesheet][href~="/dark.css"]').removeAttr('disabled');
-	else if(data == "white" || data == "light" || data == "default")
+	} else {
 		$('link[rel=stylesheet][href~="/dark.css"]').attr('disabled', 'disabled');
-	document.cookie = ("theme=" + data)
+	}
+	document.cookie = ("theme=" + isBlack)
 }

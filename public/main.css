@@ -93,7 +93,7 @@ main {
 
 .cardstack {
 	border-bottom: 2px #aaa solid;
-	padding: 0.2rem 1rem;
+	padding: 0.2rem;
 	padding-right: 1.5rem;
 	text-align: center;
 	display: inline-block;
@@ -141,8 +141,19 @@ main {
 	width: 2.45rem;
 	height: 3.5rem;
 }
+
+.small .card, .altuser .card {
+	margin-right: -1.6rem;
+}
+
 .small .cardstack, .altuser .cardstack {
 	min-height: 4.5rem;
+	min-width: 8rem;
+	margin-left: -0.8rem;
+}
+
+.small h2, .altuser h2 {
+	font-size: 1em;
 }
 
 .cardstack-count {
@@ -161,6 +172,7 @@ main {
 .back .card, .altuser .card, .deck .card {
 	/* set background image */
 	color: transparent;
+	padding: 1rem;
 	background: url(https://thomaslmcdonald.files.wordpress.com/2010/09/3fbfd-beeback.jpg);
 	background-position: center;
 }
@@ -175,6 +187,8 @@ main {
 
 .user .cardstack {
 	display: block;
+	padding: 0.2rem 1rem;
+	padding-right: 1.5rem;
 	padding-top: 3rem;
 }
 

@@ -181,7 +181,7 @@ io.on('connection', (socket) => {
 		if(!rooms[room].game.playing) {
 			// add new user to other players
 			rooms[room].users[socket.id].resetHand()
-			socket.to(room).emit("new cardstack", {title: rooms[room].users[socket.id].name + "'s hand", id: rooms[room].users[socket.id].hand.id, display: DISPLAY.alternate});
+			socket.to(room).emit("new cardstack", {title: rooms[room].users[socket.id].name, id: rooms[room].users[socket.id].hand.id, display: DISPLAY.alternate});
 
 			// display all connected players
 			socket.emit("new cardstacks", rooms[room].game.getAllCardStacks(socket));
@@ -244,27 +244,26 @@ io.on('connection', (socket) => {
 			socket.on("sort hand", function(){
 				rooms[room].users[socket.id].hand.sort();
 			})
-
-			socket.on("disconnect", function(){
-				socket.leave(room);
-				try {
-					io.to(room).emit("del cardstack", {id: rooms[room].users[socket.id].hand.id});
-				} catch(err) {} // if the user was a spectator, does not have a hand.
-				try {
-					delete rooms[room].users[socket.id];
-					io.in(room).emit("user count", Object.keys(rooms[room].users).length);
-				} catch(err) {} // if user has been deleted already, don't crash.
-				
-				if(rooms[room].users.length === 0){
-					delete rooms[room];
-					l("Room '" + room + "' closed.")
-				}
-				l("Disconnected from client id=" + socket.id + "");
-			});
 		} else {
 			// spectator mode, join next round
 			rooms[room].game.displayAll(socket)
 		}
+		socket.on("disconnect", function(){
+			socket.leave(room);
+			try {
+				io.to(room).emit("del cardstack", {id: rooms[room].users[socket.id].hand.id});
+			} catch(err) {} // if the user was a spectator / game isn't playing, does not have a hand.
+			try {
+				delete rooms[room].users[socket.id];
+				io.in(room).emit("user count", Object.keys(rooms[room].users).length);
+			} catch(err) {} // if user has been deleted already, don't crash.
+			
+			if(rooms[room].users.length === 0){
+				delete rooms[room];
+				l("Room '" + room + "' closed.")
+			}
+			l("Disconnected from client id=" + socket.id + "");
+		});
 	});
 });
 
@@ -601,12 +600,11 @@ class Card {
 
 class MaoGame {
 	constructor(room) {
-		console.log("'" + room + "'")
-		i("Game initialised");
+		i("Game initialised in room " + room);
 		this.room = room;
 		this.reset();
 		this.playing = false;
-		this.turn;
+		this.userQueue; // queue of users
 	}
 
 	reset() {
@@ -620,7 +618,6 @@ class MaoGame {
 
 	start(userID) {
 		this.playing = true;
-		this.turn = userID;
 		i("Game started");
 		io.emit("remove placeholder");
 		this.reset();
@@ -632,7 +629,23 @@ class MaoGame {
 		this.allDraw(5);
 		// one pile card
 		this.pile.addCardToTop(this.deck.playCard(this.deck.cards[0]));
+		this.queue = this.generateQueue(userID);
 		i("Completed game start.");
+	}
+
+	generateQueue(firstUser){ // similar to setTable on clientside
+		var queue = []; // main queue
+		var queueLast = []; // these play BEFORE firstUser
+		Object.keys(rooms[this.room].users).forEach(function(id, index){
+
+		}, this);
+	}
+
+	nextTurn() {
+		console.log(rooms[room].users)
+		// generate user queue (because it can change per turn)
+		
+		// then advance the queue	
 	}
 
 	allDraw(num) {
@@ -652,13 +665,13 @@ class MaoGame {
 
 		Object.keys(rooms[this.room].users).forEach(function(id, index) {
 			var disp = DISPLAY.alternate;
-			var name = rooms[this.room].users[id].name + "'s";
+			var name = rooms[this.room].users[id].name;
 			if(id == socket.id){
 				disp = DISPLAY.user;
-				name = "your"
+				name = "you"
 			}
 			try	{
-				data.push({title: name + " hand", id: rooms[this.room].users[id].hand.id, display: disp});
+				data.push({title: name, id: rooms[this.room].users[id].hand.id, display: disp});
 			} catch(err) {}; 
 			// don't need to send hand if they don't have one (spectators)
 		}, this);

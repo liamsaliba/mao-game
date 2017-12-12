@@ -18,7 +18,7 @@ function getCookie(cname) {
 
 var selectionIndex = -1;
 jInput.keyup(function(e){
-	console.log(e.keyCode);
+	//console.log(e.keyCode);
 	if (e.keyCode == 38) { // up arrow
 		if(selectionIndex < commandHistory.length-1)
 			selectionIndex++;
@@ -80,7 +80,9 @@ $("#info-room").html("room=" + room);
 
 socket.on("connect", function() {
 	$("#connection-info").addClass("connected");
-	$('meta[name=theme-color').attr('content', '#266d26')
+	try{
+		$('meta[name=theme-color]').attr('content', '#266d26')
+	} catch(e){};
 	$("#info-online").html("connected");
 	$(".cardstack-container").remove(); // resets display
 	$("#info-id").html("id=" + socket.id);
@@ -152,7 +154,7 @@ function newCardStack(data) {
 	if(data.display == "user"){
 		$("#" + data.id + " .cardstack-head").click(function(){
 			socket.emit("sort hand");
-		})
+		});
 	}
 	if(data.display == "user" || data.display == "altuser"){
 		cardstacks.push(data.id);
@@ -160,10 +162,8 @@ function newCardStack(data) {
 }
 
 function setTable(){
-	console.log("Setting table.")
 	var userIndex = -1;
 	cardstacks.forEach(function(id, index){
-		console.log(id + " : " + index);//console.log($(this).id);
 		el = $("#" + id)
 		if(userIndex > -1){
 			if(index == userIndex+1)
@@ -172,7 +172,6 @@ function setTable(){
 				el.detach().insertAfter("#altusers .cardstack-container:eq(" + (index - userIndex - 2) + ")");
 			}
 		} else if(id.replace("cardstack-", "") == socket.id) {
-			console.log("^^^ is user.")
 			userIndex = index;
 		} else {
 			el.detach().appendTo("#altusers");
@@ -235,6 +234,7 @@ function dragCard(event){
 	event.dataTransfer.setData("text\\plain", event.target.id + ";" + event.path[3].id);
 	event.dataTransfer.dropEffect = "move";
 	setTimeout(function() {event.target.style.opacity = .01}, 10);
+	console.log("dragging")
 }
 
 // Displays drop cursor
@@ -242,11 +242,13 @@ function allowDrop(event) {
 	event.preventDefault(); // data/elements cannot be dropped in other elements by default
 	// Set the dropEffect to move
  	event.dataTransfer.dropEffect = "move"
+ 	console.log("allow drop")
 }
 
 // Reset opacity on cancel / mistake
 document.addEventListener("dragend", function(event){
 	event.target.style.opacity = 1;
+	console.log("dragend")
 })
 
 function dropCard(event){
@@ -260,6 +262,7 @@ function dropCard(event){
 
 	socket.emit("play card", {cardID: data[0], origin: data[1], destination: destination});
 	// server handles the rest.
+	console.log("dropped")
 }
 
 

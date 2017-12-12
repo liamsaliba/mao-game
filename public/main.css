@@ -25,6 +25,7 @@ body {
 
 .title-info {
 	margin: 0.5em;
+	margin-bottom: 0;
 }
 
 header {
@@ -51,6 +52,7 @@ main {
 	background-color: #ccc;
 	padding: 5px;
 	height: 5rem;
+	display: none;
 }
 
 .code {
@@ -76,11 +78,6 @@ main {
 	text-align: center;
 }
 
-#altusers .cardstack-container {
-	position: static;
-	display: inline-block;
-	margin-right: 1rem;
-}
 
 .cardstack-container {
 	position: absolute;
@@ -89,6 +86,13 @@ main {
 	text-align: center;
 	margin: 0 auto;
 	margin-bottom: 1rem;
+}
+
+#altusers .cardstack-container {
+	position: static;
+	display: inline-block;
+	margin-right: 0.2rem;
+	margin-bottom: 0.2rem;
 }
 
 .cardstack {
@@ -135,7 +139,7 @@ main {
 }
 
 /* small hands */
-.small .card, .altuser .card, .pile .card:not(:nth-child(1)) {
+.small .card, .altuser .card {
 	font-size: 1.2rem;
 	line-height: 1rem;
 	width: 2.45rem;
@@ -191,16 +195,16 @@ main {
 	padding-right: 1.5rem;
 	padding-top: 3rem;
 }
-
+/* no labels for deck / pile */
 .deck .cardstack-head, .pile .cardstack-head {
 	display: none;
 }
 
 /* stack cards */
 .deck .card {
-	margin-right: -3.66rem;
+	margin-right: -4.16rem;
 }
-
+/* positioning fix */
 .deck .cardstack {
 	padding-right: 8rem;
 }
@@ -215,21 +219,21 @@ main {
 	max-width: 30rem;
 	overflow-x: hidden;
 }
-
+/* grabbable cards */
 .deck .card, .user .card {
 	cursor: move;
 	cursor: grab;
 	cursor: -moz-grab;
     cursor: -webkit-grab;
 }
-
+/* grabbed cards */
 .deck .card:active, .user .card:active {
 	cursor: grabbing;
 	cursor: -moz-grabbing;
     cursor: -webkit-grabbing;
 }
 
-/* center horizontally */
+/* user hand centred bottom */
 .user {
 	margin-left: auto;
 	margin-right: auto;
@@ -237,15 +241,23 @@ main {
 	right: 0;
 	bottom: 0; /* float bottom */
 }
-
+/* position pile and deck */
 .pile {
-	bottom: calc(50% - 7rem);
-	left: 55%;
+	bottom: calc(50% - 10rem);
+	left: 50%;
 }
 
 .deck {
-	bottom: calc(50% - 7rem);
-	right: 55%;
+	bottom: calc(50% - 10rem);
+	right: 50%;
+}
+
+/* larger cards */
+.pile .card:nth-child(1), .deck .card {
+	font-size: 2rem;
+	line-height: 1.7rem;
+	width: 4rem;
+	height: 6rem;
 }
 
 .pile .card {opacity: 1;}

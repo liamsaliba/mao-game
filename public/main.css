@@ -10,6 +10,10 @@
 	list-style-type: none;
 }
 
+li {
+	display: inline-block;
+}
+
 span {
 	display: inline-block;
 }
@@ -58,11 +62,20 @@ main {
 	padding: 0.4em;
 }
 
+#btn-begin {
+	font-size: 2rem;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	z-index: 10;
+	transform: translateX(-3.2rem);
+	display: none;
+}
+
 #btn-cancel {
 	font-size: 2rem;
 	position: relative;
-	top: calc(100% - 4rem);
-	transform: translateY(-50%);
+	top: calc(100% - 6rem);
 }
 
 #btn-settings, #btn-close-settings {
@@ -78,11 +91,11 @@ main {
 	cursor: pointer;
 }
 
-.btn:hover, #btn-cancel:hover {
+.btn:hover {
 	color: #666;
 }
 
-.btn:active, #btn-cancel:active {
+.btn:active {
 	color: #999;
 }
 
@@ -96,7 +109,6 @@ nav {
 }
 
 nav li {
-	display: inline-block;
 	margin-right: 0.1rem;
 	margin-top: 0.2rem;
 }
@@ -211,13 +223,12 @@ nav li {
 }
 
 .small .card, .altuser .card {
-	margin-right: -1.6rem;
+	margin-right: -1.5em;
 }
 
 .small .cardstack, .altuser .cardstack {
 	min-height: 4.5rem;
-	min-width: 8rem;
-	margin-left: -0.8rem;
+	padding-right: 1.90rem;
 }
 
 .small h2, .altuser h2 {

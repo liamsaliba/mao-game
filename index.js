@@ -186,10 +186,16 @@ io.on('connection', (socket) => {
 			// display all connected players
 			socket.emit("new cardstacks", rooms[room].game.getAllCardStacks(socket));
 
+			// show play button if > 1 player & game not started
+			if(Object.keys(rooms[room].users).length > 1){
+				l("Enough players to start in "+ room)
+				io.in(room).emit("show begin");
+			}
+
 			// handle command
 			socket.on("command", function(data) {
 				l("Command from id=" + socket.id + " > " + data);
-				socket.in(room).emit("message", {name: rooms[room].users[socket.id].name, id: socket.id, message: data}); // send as message to all regardless of command.
+				io.in(room).emit("message", {name: rooms[room].users[socket.id].name, id: socket.id, message: data}); // send as message to all regardless of command.
 				Command.executeMultiple(data, room, socket.id);
 			});
 
@@ -256,6 +262,15 @@ io.on('connection', (socket) => {
 			socket.on("sort hand", function(){
 				rooms[room].users[socket.id].hand.sort();
 			})
+
+			socket.on("begin", function(){
+				if(Object.keys(rooms[room].users).length > 1){
+					io.in(room).emit('hide begin')
+					rooms[room].game.start(socket.id);
+				} else {
+					l("Not enough players to start game in " + room);
+				}
+			})
 		} else {
 			// spectator mode, join next round
 			rooms[room].game.displayAll(socket)
@@ -263,13 +278,17 @@ io.on('connection', (socket) => {
 		socket.on("disconnect", function(){
 			socket.leave(room);
 			try {
-				io.to(room).emit("del cardstack", {id: rooms[room].users[socket.id].hand.id});
-			} catch(err) {} // if the user was a spectator / game isn't playing, does not have a hand.
+				socket.to(room).emit("del cardstack", {id: rooms[room].users[socket.id].hand.id});
+			} catch(err) {console.log(err)} // if the user was a spectator / game isn't playing, does not have a hand.
 			try {
 				delete rooms[room].users[socket.id];
 				io.in(room).emit("user count", Object.keys(rooms[room].users).length);
 				l(socket.id + " removed from " + room)
-				if(Object.keys(rooms[room].users).length === 0 ){
+				if(Object.keys(rooms[room].users).length === 1){
+					io.in(room).emit('hide begin');
+					l("Not enough players to begin in " + room);
+				}
+				else if(Object.keys(rooms[room].users).length === 0 ){
 					delete rooms[room];
 					l("Room '" + room + "' closed - noone in room")
 				} // catch as room may not exist
@@ -278,10 +297,9 @@ io.on('connection', (socket) => {
 				// end game if only 1 player left.
 				if(rooms[room].game.queue.length < 2){
 					rooms[room].game.reset();
-					l(room + " game ended, not enough players.")
+					l(room + " game was reset, not enough players.")
 				}
-			} catch(err) {} // if user has been deleted already, don't crash.
-			
+			} catch(err) {console.log(err)} // if user has been deleted already, don't crash.
 			
 			l("Disconnected from client id=" + socket.id + "");
 		});
@@ -323,18 +341,7 @@ class Command {
 
 commands = {reset: new Command(["reset"], function(){
 				init();
-			}),	refresh: new Command(["refresh"], refreshClients
-			),	begin: new Command(["begin", "start"], function(room, userID){
-				if(Object.keys(rooms[room].users).length > 1){
-					rooms[room].game.start(userID);
-				} else {
-					l("Not enough players to start game in " + room);
-				}
-			}), whitetheme: new Command(["theme default", "theme white", "theme normal", "theme light", "default theme", "white theme", "light theme", "normal theme"], function(room, userID){
-				rooms[room].users[userID].socket.emit("black theme", false);
-			}), blacktheme: new Command(["theme black", "theme night", "theme dark", "black theme", "night theme", "dark theme"], function(room, userID){
-				rooms[room].users[userID].socket.emit("black theme", true);
-			})
+			}),	refresh: new Command(["refresh"], refreshClients)
 		};
 
 class CardStack {
@@ -592,7 +599,6 @@ class MaoGame {
 	start(userID) {
 		this.playing = true;
 		i("Game started");
-		io.emit("remove placeholder");
 		this.reset();
 
 		// make and shuffle the deck

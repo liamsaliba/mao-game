@@ -19,8 +19,10 @@ function getCookie(cname) {
 var selectionIndex = -1; // for command selection
 const inputModes = {default: 0, room: 1, name: 2}
 var inputMode = 0;
+resetInput();
 jInput.keyup(function(e){
 	if (inputMode == inputModes.default){
+		console.log("hi")
 		if (e.keyCode == 27) { // esc
 			jInput.val("");
 			selectionIndex = -1; // reset command selection
@@ -60,6 +62,7 @@ jInput.keyup(function(e){
 });
 
 function resetInput() {
+	selectionIndex = -1;
 	jInput.val("");
 	inputMode = 0;
 	jOverlay.finish().fadeOut("fast");
@@ -102,18 +105,23 @@ $("#btn-theme").click(function(){
 $("#btn-room").click(function(){
 	jInput.focus();
 	inputMode = inputMode.room;
-	$("#overlay").fadeIn();
-	$("#input").attr('placeholder', 'enter room...');
+	jOverlay.fadeIn();
+	jInput.attr('placeholder', 'enter room...');
 });
 
 $("#btn-username").click(function(){
 	jInput.focus();
 	inputMode = inputModes.name;
-	$("#overlay").fadeIn();
-	$("#input").attr('placeholder', 'enter new username...');
+	jOverlay.fadeIn();
+	jInput.attr('placeholder', 'enter new username...');
 });
 
 $("#btn-cancel").click(resetInput);
+
+$("#btn-begin").click(function(){
+	$(this).fadeOut("fast");
+	socket.emit("begin");
+})
 
 function updateUserCount(count){
 	if(count === undefined)
@@ -174,9 +182,14 @@ socket.on("user count", function(count) {
 	updateUserCount(count);
 });
 
-socket.on("remove placeholder", function(){
-	$("#input").attr('placeholder', 'chit chat');
-});
+socket.on("show begin", function(){
+	console.log("wtf")
+	$("#btn-begin").fadeIn("fast");
+})
+
+socket.on("hide begin", function(){
+	$("#btn-begin").fadeOut("fast");
+})
 
 socket.on("clear table", function() {
 	$("#table cardstack-container").remove();

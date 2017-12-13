@@ -29,12 +29,76 @@ body {
 }
 
 header {
-	background: linear-gradient(to bottom, #999 0%, #ddd 100%);
+	background: linear-gradient(to bottom, #999999dd 0%, #99999900 100%);
+	z-index: 7;
 }
 
 main {
 	flex-grow: 1;
 	position: relative;
+}
+
+#overlay {
+	display: none;
+	opacity: 0.8;
+	background-color: black;
+	color: white;
+	z-index: 8;
+	width: 100%;
+	position: absolute;
+	text-align: center; 
+	top: 0;
+	left: 0;
+	height: calc(100% - 3.65rem);
+}
+
+.btn-border {
+	border: 1px solid #888;
+	border-radius: 0.3em;
+	padding: 0.4em;
+}
+
+#btn-cancel {
+	font-size: 2rem;
+	position: relative;
+	top: calc(100% - 4rem);
+	transform: translateY(-50%);
+}
+
+#btn-settings, #btn-close-settings {
+	float: left;
+	font-size: 2em;
+	margin-left: 0.2rem;
+	margin-right: 0.7rem;
+	color: #444;
+	cursor: pointer;
+}
+
+.btn {
+	cursor: pointer;
+}
+
+.btn:hover, #btn-cancel:hover {
+	color: #666;
+}
+
+.btn:active, #btn-cancel:active {
+	color: #999;
+}
+
+nav {
+	width: 100%;
+	position: absolute;
+	padding: 0.5rem;
+	background: linear-gradient(to bottom, #ccccccee 70%, #cccccc00 100%);
+	z-index: 8;
+	display: none;
+}
+
+nav li {
+	display: inline-block;
+	margin-right: 0.1rem;
+	margin-top: 0.2rem;
 }
 
 #input {
@@ -139,7 +203,7 @@ main {
 }
 
 /* small hands */
-.small .card, .altuser .card {
+.small .card, .altuser .card, #btn-card {
 	font-size: 1.2rem;
 	line-height: 1rem;
 	width: 2.45rem;
@@ -173,13 +237,15 @@ main {
 	color: black;
 }
 /* card back */
-.back .card, .altuser .card, .deck .card {
+.back .card, .altuser .card, .deck .card, #btn-card {
 	/* set background image */
 	color: transparent;
 	padding: 1rem;
-	background: url(https://thomaslmcdonald.files.wordpress.com/2010/09/3fbfd-beeback.jpg);
+	background: url(http://cdn.shopify.com/s/files/1/0200/7616/products/playing-cards-bicycle-rider-back-2_grande.png?v=1494193481);
+	background-size: cover;
 	background-position: center;
 }
+
 /* bounding box */
 .deck .cardstack, .pile .cardstack {
 	text-align: left;
@@ -194,6 +260,10 @@ main {
 	padding: 0.2rem 1rem;
 	padding-right: 1.5rem;
 	padding-top: 3rem;
+}
+
+.user .cardstack-head {
+	cursor: pointer;
 }
 /* no labels for deck / pile */
 .deck .cardstack-head, .pile .cardstack-head {
@@ -297,7 +367,7 @@ h1, h2, h3 {
 }
 
 /* unselectable */
-.noselect, .cardstack-container * {
+.noselect, .cardstack-container, header, nav {
   -webkit-touch-callout: none; /* iOS Safari */
     -webkit-user-select: none; /* Safari */
      -khtml-user-select: none; /* Konqueror HTML */

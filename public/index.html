@@ -8,10 +8,11 @@
 		<meta charset="utf-8">
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-	    <meta name="viewport" content="width=450, user-scalable=no">
+	    <meta name="viewport" content="width=480">
 	    <meta name="theme-color" content="#555">
 	    <link rel="stylesheet" href="/main.css">
 	    <link rel="stylesheet" href="/dark.css" disabled>
+	    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 	    <!-- jQuery Mobile -->
 	    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 	    <!-- Drag and Drop -->
@@ -22,12 +23,26 @@
 	<body>
 		<header>
 			<div class="title-info">
-				<h1>mao</h1> <i>the only rule you may be told is this one</i><small style="position:absolute;right:0.4rem;top:0.4rem;color:#eee">Liam Saliba / exradr, 2017</small>
+				<a id="btn-settings" aria-label="Settings">
+					<i class="fa fa-bars btn" aria-hidden="true" title="Settings"></i>
+				</a>
+				<h1>mao</h1> <i>the only rule you may be told is this one</i>
 			</div>
 		</header>
+		<nav>
+			<a id="btn-close-settings" aria-label="Close">
+				<i class="fa fa-times btn" aria-hidden="true" title="Close"></i>
+			</a>
+			<li class="btn btn-border" id="btn-showchat">Show Chat</li>
+			<li class="btn btn-border" id="btn-room">Switch Room</li>
+			<li class="btn btn-border" id="btn-username">Change Name</li>
+			<li class="btn btn-border" id="btn-theme">Theme</li>
+			<small style="padding-left: 0.3rem">exradr, 2017</small>
+		</nav>
 		<main>
 			<div id="table"><div id="altusers"></div></div>
 		</main>	
+		<div id="overlay"><span class="btn btn-border" id="btn-cancel">cancel</span></div>
 		<footer>
 			<div id="connection-info">
 				<div class="info" id="info-online">disconnected</div>

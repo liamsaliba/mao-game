@@ -25,5 +25,13 @@ input {
 }
 
 header {
-	background: linear-gradient(to bottom, #000 0%, #333 100%);
+	background: linear-gradient(to bottom, #000000cc 0%, #00000000 100%);
+}
+
+nav {
+	background: linear-gradient(to bottom, #000000ff 0%, #333333cc 100%);
+}
+
+#btn-settings, #btn-close-settings {
+	color: #bbb;
 }

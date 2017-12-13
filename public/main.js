@@ -1,8 +1,9 @@
 var commandHistory = ["begin"]
+var blackTheme = (getCookie("theme") == "true");
+setTheme();
 
 const jInput = $("#input")
-
-setTheme(getCookie("theme") != "false");
+const jOverlay = $("#overlay");
 
 function getCookie(cname) {
     var name = cname + "=";
@@ -15,33 +16,55 @@ function getCookie(cname) {
     return "";
 }
 
-var selectionIndex = -1;
+var selectionIndex = -1; // for command selection
+const inputModes = {default: 0, room: 1, name: 2}
+var inputMode = 0;
 jInput.keyup(function(e){
-	//console.log(e.keyCode);
-	if (e.keyCode == 38) { // up arrow
-		if(selectionIndex < commandHistory.length-1)
-			selectionIndex++;
-		jInput.val(commandHistory[selectionIndex]);
-	} else if (e.keyCode == 40) {
-		if(selectionIndex > -1){
-			selectionIndex--;
+	if (inputMode == inputModes.default){
+		if (e.keyCode == 27) { // esc
+			jInput.val("");
+			selectionIndex = -1; // reset command selection
+		} else if (e.keyCode == 38) { // up arrow
+			if(selectionIndex < commandHistory.length-1)
+				selectionIndex++;
 			jInput.val(commandHistory[selectionIndex]);
-		} else {
-			jInput.val("");
+		} else if (e.keyCode == 40) { // down arrow
+			if(selectionIndex > -1){
+				selectionIndex--;
+				jInput.val(commandHistory[selectionIndex]);
+			} else {
+				jInput.val("");
+			}
+		} else if (e.keyCode == 13) { // enter
+			e.preventDefault();
+			if(jInput.val() !== ""){
+				commandHistory.unshift(jInput.val()); // add command to history
+				socket.emit("command", commandHistory[0]);
+				jInput.val("");
+			}
+		} else if (e.keyCode in []){return} // cancel if ctrl, shift, etc
+	} else if (e.keyCode == 27){ // esc
+		resetInput();
+	} else if (e.keyCode == 13){ // enter
+		e.preventDefault()
+		if (inputMode == inputModes.room){
+			socket.emit("join room", jInput.val());
+		} else if (inputMode == inputModes.name){
+			socket.emit("set username", jInput.val());
 		}
+		resetInput()
 	}
-	if (e.keyCode == 13) {
-		e.preventDefault();
-		if(jInput.val() !== ""){
-			commandHistory.unshift(jInput.val()); // add command to history
-			socket.emit("command", commandHistory[0]);
-			jInput.val("");
-		}
-	} else if (e.keyCode in []){return} // cancel if ctrl, shift, etc
-	else {
-		//constructOutput(jInput.val()); // live output
-	}
+	
+	console.log(e.keyCode);
+
 });
+
+function resetInput() {
+	jInput.val("");
+	inputMode = 0;
+	jOverlay.finish().fadeOut("fast");
+	jInput.attr('placeholder', 'chit chat');
+}
 
 function output(str, format) {
 	if(format == FORMAT.IMPORTANT)
@@ -60,7 +83,37 @@ function init() {
 
 $("main").click(function(){
 	jInput.focus();
-})
+	$("nav").slideUp();
+});
+
+$("#btn-settings").click(function(){
+	$("nav").slideDown();
+});
+
+$("#btn-close-settings").click(function(){
+	$("nav").slideUp();
+});
+
+$("#btn-theme").click(function(){
+	blackTheme = !blackTheme;
+	setTheme();
+});
+
+$("#btn-room").click(function(){
+	jInput.focus();
+	inputMode = inputMode.room;
+	$("#overlay").fadeIn();
+	$("#input").attr('placeholder', 'enter room...');
+});
+
+$("#btn-username").click(function(){
+	jInput.focus();
+	inputMode = inputModes.name;
+	$("#overlay").fadeIn();
+	$("#input").attr('placeholder', 'enter new username...');
+});
+
+$("#btn-cancel").click(resetInput);
 
 function updateUserCount(count){
 	if(count === undefined)
@@ -72,6 +125,7 @@ function updateUserCount(count){
 var id;
 const socket = io.connect("/");
 
+// set room by URL
 var room = "";
 if(window.location.pathname.slice(0, 6) == "/room/")
 	room = window.location.pathname.slice(6);
@@ -103,8 +157,6 @@ socket.on("disconnect", function() {
 	$("#info-online").html("disconnected");
 	updateUserCount();
 });
-// could make this serverside but meh
-socket.on("black theme", setTheme)
 
 socket.on("message", function(data){
 	console.log(data.name + ": " + data.message);
@@ -123,7 +175,7 @@ socket.on("user count", function(count) {
 });
 
 socket.on("remove placeholder", function(){
-	$("#input").attr('placeholder', 'enter command...');
+	$("#input").attr('placeholder', 'chit chat');
 });
 
 socket.on("clear table", function() {
@@ -194,7 +246,7 @@ socket.on("del cardstack", function(data){
 });
 
 socket.on("display cardcount", function(data) {
-	if(data.count === undefined)
+	if(data.count === undefined || data.count == 0)
 		$("#" + data.id + " .cardstack-count").html("");
 	else
 		$("#" + data.id + " .cardstack-count").html("(" + data.count + ")");
@@ -277,11 +329,13 @@ function dropCard(event){
 
 
 
-function setTheme(isBlack) {
-	if(isBlack){
+function setTheme() {
+	if(blackTheme){
 		$('link[rel=stylesheet][href~="/dark.css"]').removeAttr('disabled');
+		$("#btn-theme").html("Light Theme")
 	} else {
 		$('link[rel=stylesheet][href~="/dark.css"]').attr('disabled', 'disabled');
+		$("#btn-theme").html("Dark Theme")
 	}
-	document.cookie = ("theme=" + isBlack)
+	document.cookie = ("theme=" + blackTheme)
 }

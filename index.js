@@ -281,6 +281,8 @@ io.on('connection', (socket) => {
 				socket.to(room).emit("del cardstack", {id: rooms[room].users[socket.id].hand.id});
 			} catch(err) {console.log(err)} // if the user was a spectator / game isn't playing, does not have a hand.
 			try {
+				// add cards of player back into the deck
+				
 				delete rooms[room].users[socket.id];
 				io.in(room).emit("user count", Object.keys(rooms[room].users).length);
 				l(socket.id + " removed from " + room)

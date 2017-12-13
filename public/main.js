@@ -183,7 +183,6 @@ socket.on("user count", function(count) {
 });
 
 socket.on("show begin", function(){
-	console.log("wtf")
 	$("#btn-begin").fadeIn("fast");
 })
 

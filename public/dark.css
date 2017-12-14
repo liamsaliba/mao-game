@@ -8,10 +8,6 @@ body {
 	border-bottom: 2px #888 solid;
 }
 
-#output {
-	background-color: #444;
-}
-
 .cardstack {
 	border-bottom: 2px #666 solid;
 }
@@ -35,3 +31,13 @@ nav {
 #btn-settings, #btn-close-settings {
 	color: #bbb;
 }
+
+#overlay, #output {
+	background-color: #000000cc;
+	color: white;
+}
+
+.message-body {
+	background-color: #333333cc;
+}
+

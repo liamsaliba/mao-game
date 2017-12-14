@@ -34,7 +34,7 @@ body {
 
 header {
 	background: linear-gradient(to bottom, #999999dd 0%, #99999900 100%);
-	z-index: 7;
+	z-index: 6;
 }
 
 main {
@@ -43,10 +43,17 @@ main {
 }
 
 #overlay {
+	z-index: 8;
+}
+
+#output {
+	z-index: 9;
+}
+
+#overlay, #output {
 	display: none;
-	opacity: 0.8;
-	background-color: black;
-	color: white;
+	background-color: #ffffffcc;
+	color: black;
 	z-index: 8;
 	width: 100%;
 	position: absolute;
@@ -54,6 +61,46 @@ main {
 	top: 0;
 	left: 0;
 	height: calc(100% - 3.65rem);
+}
+
+
+#messages {
+	position: fixed;
+	bottom: 3.7rem;
+	width: 100%;
+	max-height: calc(100% - 3.7rem);
+	overflow-y: auto;
+	padding: 0.2rem;
+}
+
+#messages li {
+	display: block;
+	padding: 0.2rem;
+	margin: 0 auto;
+	margin-top: 0.2rem;
+}
+
+.message-body {
+	background-color: #cccccccc;
+	border-radius: 0.3rem;	
+	padding: 0.5rem;
+    word-wrap: break-word;
+    
+}
+
+#messages .message-body {
+	max-width: calc(100% - 4rem);
+    margin-left: 0.2rem;
+}
+
+.cardstack-message .message-body {
+	max-width: 8rem;
+    position: absolute;
+    top: -5rem;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .btn-border {
@@ -85,6 +132,13 @@ main {
 	margin-right: 0.7rem;
 	color: #444;
 	cursor: pointer;
+}
+
+#btn-showchat {
+	font-size: 2em;
+	position: absolute;
+	right: 0.5rem;
+	bottom: 0.2rem;
 }
 
 .btn {
@@ -121,14 +175,6 @@ nav li {
 	width: 100%;
 	text-align: center;
 	padding: 5px;
-}
-
-#output {
-	text-align: center;
-	background-color: #ccc;
-	padding: 5px;
-	height: 5rem;
-	display: none;
 }
 
 .code {
@@ -193,6 +239,11 @@ nav li {
 	/* force one line hands */
 	overflow-y: hidden;
 	white-space: nowrap;
+}
+
+.cardstack-message {
+	position: relative;
+    top: -5rem;
 }
 
 .card {

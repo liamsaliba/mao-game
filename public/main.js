@@ -22,7 +22,6 @@ var inputMode = 0;
 resetInput();
 jInput.keyup(function(e){
 	if (inputMode == inputModes.default){
-		console.log("hi")
 		if (e.keyCode == 27) { // esc
 			jInput.val("");
 			selectionIndex = -1; // reset command selection
@@ -57,7 +56,7 @@ jInput.keyup(function(e){
 		resetInput()
 	}
 	
-	console.log(e.keyCode);
+	console.log("key: " + e.keyCode);
 
 });
 
@@ -123,6 +122,19 @@ $("#btn-begin").click(function(){
 	socket.emit("begin");
 })
 
+var chatShown = false;
+$("#btn-showchat").click(function(){
+	if(chatShown){
+		$("#btn-showchat i").removeClass("fa-angle-down").addClass("fa-angle-up");
+		$("#output").fadeOut();
+
+	} else {
+		$("#btn-showchat i").removeClass("fa-angle-up").addClass("fa-angle-down");
+		$("#output").fadeIn();
+	}
+	chatShown = !chatShown;
+})
+
 function updateUserCount(count){
 	if(count === undefined)
 		$("#info-online-count").html();
@@ -167,6 +179,9 @@ socket.on("disconnect", function() {
 });
 
 socket.on("message", function(data){
+	$("#messages").append("<li>" + data.name + " <span class='message-body'>" + data.message + "</span></li>");
+	console.log(data.id);
+	$("#" + data.id + " .cardstack-message").html("<span class='message-body'>" + data.message + "</span>")
 	console.log(data.name + ": " + data.message);
 })
 
@@ -221,7 +236,7 @@ function newCardStack(data) {
 	var drop = "";
 	if(data.display == "user" || data.display == "pile")
 		drop = ' ondrop="dropCard(event)" ondragover="allowDrop(event)"';
-	var stack = $("#table").append('<div class="cardstack-container ' + data.display + '" id="' + data.id + '"' + drop + '><div class="cardstack-box"><div class="cardstack"></div></div><div class="cardstack-head"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small></div></div>')
+	var stack = $("#table").append('<div class="cardstack-container ' + data.display + '" id="' + data.id + '"' + drop + '><div class="cardstack-box"><div class="cardstack"></div></div><div class="cardstack-head"><h2 class="cardstack-title">' + data.title + '</h2><small class="cardstack-count"></small></div><div class="cardstack-message"></div></div>')
 	if(data.display == "user"){
 		$("#" + data.id + " .cardstack-head").click(function(){
 			socket.emit("sort hand");

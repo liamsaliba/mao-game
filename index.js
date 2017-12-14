@@ -195,7 +195,7 @@ io.on('connection', (socket) => {
 			// handle command
 			socket.on("command", function(data) {
 				l("Command from id=" + socket.id + " > " + data);
-				io.in(room).emit("message", {name: rooms[room].users[socket.id].name, id: socket.id, message: data}); // send as message to all regardless of command.
+				io.in(room).emit("message", {name: rooms[room].users[socket.id].name, id: rooms[room].users[socket.id].hand.id, message: data}); // send as message to all regardless of command.
 				Command.executeMultiple(data, room, socket.id);
 			});
 
@@ -282,7 +282,7 @@ io.on('connection', (socket) => {
 			} catch(err) {console.log(err)} // if the user was a spectator / game isn't playing, does not have a hand.
 			try {
 				// add cards of player back into the deck
-				
+
 				delete rooms[room].users[socket.id];
 				io.in(room).emit("user count", Object.keys(rooms[room].users).length);
 				l(socket.id + " removed from " + room)

@@ -26,7 +26,10 @@ http.listen(PORTNUMBER, function(){
 	init();
 });
 
-
+// Hashing ids
+var Hashids = require('hashids');
+var userhashids = new Hashids();
+var cardhashids;
 
 // Libraries
 String.prototype.sanitise = function() {
@@ -200,8 +203,9 @@ io.on('connection', (socket) => {
 			});
 
 			socket.on("play card", function(data){
-				var cardID = data.cardID.replace("card-", "");
 				var origin = data.origin.replace("cardstack-", "");
+				cardhashids = new Hashids(origin); // decode ID
+				var cardID = cardhashids.decode(data.cardID.replace("card-", ""));
 				var destination = data.destination.replace("cardstack-", "");
 				movingCard = new Card(Card.getValueFromID(cardID), Card.getSuitFromID(cardID));
 				l(socket.id + " moving " + movingCard.toString() + " from " + origin + " to " + destination);
@@ -399,8 +403,8 @@ class CardStack {
 	toDisplay() {
 		var displayCards = [];
 		this.cards.forEach(function(card){
-			displayCards.push(card.toDisplay());
-		});
+			displayCards.push(card.toDisplay(this.userID));
+		}, this);
 		return displayCards;
 	}
 	// card count
@@ -431,14 +435,14 @@ class CardStack {
 
 	addCardToBottom(card) {
 		this.cards.push(card);
-		io.in(this.room).emit("display card bottom", {id: this.id, card: card.toDisplay()})
+		io.in(this.room).emit("display card bottom", {id: this.id, card: card.toDisplay(this.userID)})
 		this.displayCount();
 		l("Adding card to bottom of " + this.id);
 	}
 
 	addCardToTop(card){
 		this.cards.unshift(card);
-		io.in(this.room).emit("display card top", {id: this.id, card: card.toDisplay()});
+		io.in(this.room).emit("display card top", {id: this.id, card: card.toDisplay(this.userID)});
 		this.displayCount();
 		l("Adding card to top of " + this.id);
 	}
@@ -558,8 +562,9 @@ class Card {
 		return [value, suit].join("<br>");
 	};
 	// info used to display a specific card
-	toDisplay() {
-		return {colour: this.suit.colour, id: this.id, str: this.toDisplayString() };
+	toDisplay(parent) {
+		cardhashids = new Hashids(parent);
+		return {colour: this.suit.colour, id: "card-" + cardhashids.encode(this.numID), str: this.toDisplayString() };
 	}
 	// use 14 instead of 13 to ensure Joker gets its own distinct ID.
 	get numID() {

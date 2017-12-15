@@ -8,6 +8,7 @@
   "license": "BSD",
   "dependencies": {
     "express": "^4.15.3",
+    "hashids": "^1.1.4",
     "socket.io": "^2.0.2"
   }
 }

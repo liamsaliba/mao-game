@@ -180,9 +180,7 @@ socket.on("disconnect", function() {
 
 socket.on("message", function(data){
 	$("#messages").append("<li>" + data.name + " <span class='message-body'>" + data.message + "</span></li>");
-	console.log(data.id);
-	$("#" + data.id + " .cardstack-message").html("<span class='message-body'>" + data.message + "</span>")
-	console.log(data.name + ": " + data.message);
+	$("#" + data.id + " .cardstack-message").fadeIn("fast").html("<span class='message-body'>" + data.message + "</span>").delay(5000).fadeOut("fast");
 })
 
 socket.on("output", function(data) {

@@ -96,11 +96,15 @@ main {
 .cardstack-message .message-body {
 	max-width: 8rem;
     position: absolute;
-    top: -5rem;
+    top: -1rem;
     left: 0;
     right: 0;
     margin-left: auto;
     margin-right: auto;
+}
+
+#alt-users .cardstack-message .message-body {
+	/*top: 0;*/
 }
 
 .btn-border {

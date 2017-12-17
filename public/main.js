@@ -49,7 +49,9 @@ jInput.keyup(function(e){
 	} else if (e.keyCode == 13){ // enter
 		e.preventDefault()
 		if (inputMode == inputModes.room){
+			socket.emit("leave room");
 			room = jInput.val();
+			window.history.pushState(room, "mao - " + room, "/room/" + room);
 			console.log("attempted to join room, " + room);
 			socket.emit("join room", room);
 		} else if (inputMode == inputModes.name){
@@ -154,6 +156,7 @@ const socket = io.connect("/");
 
 // get room by URL
 var room = "";
+var cardstacks;
 if(window.location.pathname.slice(0, 6) == "/room/")
 	room = window.location.pathname.slice(6);
 
@@ -167,9 +170,16 @@ socket.on("connect", function() {
 		$('meta[name=theme-color]').attr('content', '#266d26')
 	} catch(e){};
 	$("#info-online").html("connected");
-	$(".cardstack-container").remove(); // resets display
 	$("#info-id").html("id=" + socket.id);
+	resetDisplay();
 });
+
+function resetDisplay() {
+	$(".cardstack-container").remove(); // resets display
+	$("#btn-begin").finish().fadeOut("fast");
+	cardstacks = [];
+	console.log("Reset display.")
+}
 
 socket.on("reconnect", function(){
 	console.log("reconnected!");
@@ -207,8 +217,10 @@ socket.on("hide begin", function(){
 })
 
 socket.on("clear table", function() {
-	$("#table cardstack-container").remove();
+	$(".cardstack-container").remove();
 });
+
+socket.on("reset display", resetDisplay);
 
 $(document).ready(function() { init(); })
 
@@ -232,7 +244,6 @@ socket.on("new cardstacks", function(data) {
 	setTable();
 });
 // list of ids by turn order
-var cardstacks = []
 function newCardStack(data) {
 	var drop = "";
 	if(data.display == "user" || data.display == "pile")

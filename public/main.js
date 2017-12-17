@@ -49,7 +49,9 @@ jInput.keyup(function(e){
 	} else if (e.keyCode == 13){ // enter
 		e.preventDefault()
 		if (inputMode == inputModes.room){
-			socket.emit("join room", jInput.val());
+			room = jInput.val();
+			console.log("attempted to join room, " + room);
+			socket.emit("join room", room);
 		} else if (inputMode == inputModes.name){
 			socket.emit("set username", jInput.val());
 		}
@@ -68,7 +70,7 @@ function resetInput() {
 	jInput.attr('placeholder', 'chit chat');
 }
 
-function output(str, format) {
+function output2(str, format) {
 	if(format == FORMAT.IMPORTANT)
 		$("#output").append("<li class='animated infinite pulse'>" + str + "</li>");
 	else if(format == FORMAT.DEBUG)
@@ -77,6 +79,11 @@ function output(str, format) {
 		$("#output").html("<li class='animated bounce error'" + str + "</li>")
 	else
 		$("#output").html("<li>" + str + "</li>");
+}
+
+function output(data){
+	$("#messages").append("<li>" + data.name + " <span class='message-body " + data.format + "'>" + data.message + "</span></li>");
+	$("#" + data.id + " .cardstack-message").finish().fadeIn("fast").html("<span class='message-body " + data.format + "'>" + data.message + "</span>").delay(5000).fadeOut("fast");
 }
 
 function init() {
@@ -103,22 +110,22 @@ $("#btn-theme").click(function(){
 
 $("#btn-room").click(function(){
 	jInput.focus();
-	inputMode = inputMode.room;
-	jOverlay.fadeIn();
+	inputMode = inputModes.room;
+	jOverlay.finish().fadeIn();
 	jInput.attr('placeholder', 'enter room...');
 });
 
 $("#btn-username").click(function(){
 	jInput.focus();
 	inputMode = inputModes.name;
-	jOverlay.fadeIn();
+	jOverlay.finish().fadeIn();
 	jInput.attr('placeholder', 'enter new username...');
 });
 
 $("#btn-cancel").click(resetInput);
 
 $("#btn-begin").click(function(){
-	$(this).fadeOut("fast");
+	$(this).finish().fadeOut("fast");
 	socket.emit("begin");
 })
 
@@ -126,11 +133,11 @@ var chatShown = false;
 $("#btn-showchat").click(function(){
 	if(chatShown){
 		$("#btn-showchat i").removeClass("fa-angle-down").addClass("fa-angle-up");
-		$("#output").fadeOut();
+		$("#output").finish().fadeOut();
 
 	} else {
 		$("#btn-showchat i").removeClass("fa-angle-up").addClass("fa-angle-down");
-		$("#output").fadeIn();
+		$("#output").finish().fadeIn();
 	}
 	chatShown = !chatShown;
 })
@@ -139,24 +146,23 @@ function updateUserCount(count){
 	if(count === undefined)
 		$("#info-online-count").html();
 	else
-		$("#info-online-count").html(count + " in room");
+		$("#info-online-count").html(count + " players in '" + room + "'");
 };
 
 var id;
 const socket = io.connect("/");
 
-// set room by URL
+// get room by URL
 var room = "";
 if(window.location.pathname.slice(0, 6) == "/room/")
 	room = window.location.pathname.slice(6);
-socket.emit("join room", room);
-$("#info-room").html("room=" + room);
 
 // socket.io debugging
 //localStorage.debug = "*";
 
 socket.on("connect", function() {
 	$("#connection-info").addClass("connected");
+	socket.emit("join room", room);
 	try{
 		$('meta[name=theme-color]').attr('content', '#266d26')
 	} catch(e){};
@@ -178,10 +184,7 @@ socket.on("disconnect", function() {
 	updateUserCount();
 });
 
-socket.on("message", function(data){
-	$("#messages").append("<li>" + data.name + " <span class='message-body'>" + data.message + "</span></li>");
-	$("#" + data.id + " .cardstack-message").fadeIn("fast").html("<span class='message-body'>" + data.message + "</span>").delay(5000).fadeOut("fast");
-})
+socket.on("message", output);
 
 socket.on("output", function(data) {
 	output(data.str, data.format);
@@ -196,11 +199,11 @@ socket.on("user count", function(count) {
 });
 
 socket.on("show begin", function(){
-	$("#btn-begin").fadeIn("fast");
+	$("#btn-begin").finish().fadeIn("fast");
 })
 
 socket.on("hide begin", function(){
-	$("#btn-begin").fadeOut("fast");
+	$("#btn-begin").finish().fadeOut("fast");
 })
 
 socket.on("clear table", function() {

@@ -52,7 +52,7 @@ main {
 
 #overlay, #output {
 	display: none;
-	background-color: #ffffffcc;
+	background-color: #ffffffee;
 	color: black;
 	z-index: 8;
 	width: 100%;
@@ -71,6 +71,7 @@ main {
 	max-height: calc(100% - 3.7rem);
 	overflow-y: auto;
 	padding: 0.2rem;
+	padding-bottom: 0.5rem;
 }
 
 #messages li {

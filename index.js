@@ -26,10 +26,16 @@ http.listen(PORTNUMBER, function(){
 	init();
 });
 
-// Hashing ids
+// Hashing card IDs
 var Hashids = require('hashids');
-var userhashids = new Hashids();
+var userhashids = new Hashids(); //TODO hash user ids
 var cardhashids;
+
+// Username generator
+var Moniker = require("moniker")
+var userGen = Moniker.generator([Moniker.adjective, Moniker.noun])
+userGen.maxSize = 12;
+userGen.glue = "";
 
 // Libraries
 String.prototype.sanitise = function() {
@@ -48,7 +54,7 @@ Array.prototype.removeBlanks = function() {
 	for (let e of this.entries())
 		if (e[1] === "")
 			this.remove(e[0]); // delete ""
-}
+};
 
 Array.prototype.shuffle = function() {
 	var array = this;
@@ -75,8 +81,11 @@ Array.prototype.contains = function(obj) {
 
 
 // logging library
-function l(string) {
-	console.log(new Date().toLocaleString() + " * " + string)
+function l(string, id) {
+	var special = "";
+	if(id !== undefined)
+		special = id + " * "
+	console.log(new Date().toLocaleString() + " * " + special + string)
 }
 function i(string){
 	console.log(new Date().toLocaleString() + " i " + string)	
@@ -88,10 +97,8 @@ function e(string){
 	console.error(new Date().toLocaleString() + " ! " + "[" + e.caller.name + "] " + string)
 }
 
-// game object
 var rooms = {};
 
-const FACE = {UP: true, DOWN: false}
 const RED = 'red';
 const BLACK = 'black';
 
@@ -111,7 +118,7 @@ function init() {
 function refreshClients() {
 	rooms = {};
 	io.emit("refresh");
-	l("Refreshed connected clients.")
+	i("Refreshed connected clients.")
 }
 
 // console input handler
@@ -135,15 +142,26 @@ stdin.addListener("data", function(d) {
 
 class Room {
 	constructor(id){
-		l("Room '" + id + "' created.")
+		l("Room '" + this.id + "' created.")
 		this.id = id;
 		this.users = {};
-		//this.reset();
+		/* Resetting in the constructor causes
+		 * bizzare behaviour, don't do it. */
 	}
 	reset(){
-		l("Room '" + this.id + "' reset.")
+		l("Room '" + this.id + "' resetting")
 		this.users = {};
 		this.game = new MaoGame(this.id);
+		l("Room '" + this.id + "' reset.")
+	}
+
+	createUser(socket) {
+		this.users[socket.id] = new User(socket, this.id);
+	}
+
+	removeUser(userID) {
+		delete this.users[userID];
+		l("Removed user " + userID, this.room)
 	}
 }
 
@@ -151,16 +169,15 @@ class User {
 	constructor(socket, room) {
 		this.socket = socket;
 		this.room = room;
-		l("User created id=" + this.id);
-		// TODO: add method to make new name
-		this.name = this.id.slice(0, 6);
-
+		this.name = userGen.choose();
+		l(this.name + " (" + this.id + ") created.", this.room);
 	}
 	get id() {
 		return this.socket.id;
 	}
 	resetHand() {
 		this.hand = new CardStack(this.id, this.room);
+		l(this.id + " hand reset.", this.room);
 	}
 
 }
@@ -170,41 +187,50 @@ io.on('connection', (socket) => {
 	l("Connected to client id=" + socket.id + "");
 
 	socket.on("join room", function(room){
-		socket.join(room)
-		l(socket.id + " join room " + room);
+		// Leave any previous rooms
+		Object.keys(io.sockets.adapter.sids[socket.id]).filter(item => item!=socket.id).forEach(function(roomID, index){
+			rooms[roomID].removeUser(socket.id);
+			socket.leave(roomID);
+		});
+
+		l(socket.id + " joining room.", room);
+		// Make new room if it doesn't exist.
 		if (typeof rooms[room] === "undefined") {
 			rooms[room] = new Room(room);
 			rooms[room].reset();
 		}
-		rooms[room].users[socket.id] = new User(socket, room);
+		// Add user to the room
+		rooms[room].createUser(socket);
+		socket.join(room);
 
+		// Push user count to all clients
 		io.in(room).emit("user count", Object.keys(rooms[room].users).length);
 
-		// join the game if it hasn't started
+		// Join the game if it has not started
 		if(!rooms[room].game.playing) {
-			// add new user to other players
-			rooms[room].users[socket.id].resetHand()
+			// User gets a hand
+			rooms[room].users[socket.id].resetHand();
+			// Display empty hand to everyone else in room
 			socket.to(room).emit("new cardstack", {title: rooms[room].users[socket.id].name, id: rooms[room].users[socket.id].hand.id, display: DISPLAY.alternate});
-
-			// display all connected players
+			// Display all hands (including self) to new user
 			socket.emit("new cardstacks", rooms[room].game.getAllCardStacks(socket));
-
-			// show play button if > 1 player & game not started
+			// Show play button if enough players ready
 			if(Object.keys(rooms[room].users).length > 1){
-				l("Enough players to start in "+ room)
+				l("Enough players to start in " + room)
 				io.in(room).emit("show begin");
 			}
-
-			// handle command
+			// Handle messages from textbox
 			socket.on("command", function(data) {
-				l("Command from id=" + socket.id + " > " + data);
+				l("id=" + socket.id + " > " + data);
+
 				io.in(room).emit("message", {name: rooms[room].users[socket.id].name, id: rooms[room].users[socket.id].hand.id, message: data}); // send as message to all regardless of command.
 				Command.executeMultiple(data, room, socket.id);
 			});
 
 			socket.on("play card", function(data){
 				var origin = data.origin.replace("cardstack-", "");
-				cardhashids = new Hashids(origin); // decode ID
+				cardhashids = new Hashids(origin); 
+				// decode card ID, convert to object
 				var cardID = cardhashids.decode(data.cardID.replace("card-", ""));
 				var destination = data.destination.replace("cardstack-", "");
 				movingCard = new Card(Card.getValueFromID(cardID), Card.getSuitFromID(cardID));
@@ -279,6 +305,7 @@ io.on('connection', (socket) => {
 			// spectator mode, join next round
 			rooms[room].game.displayAll(socket)
 		}
+		// TODO: verify disconnect logic
 		socket.on("disconnect", function(){
 			socket.leave(room);
 			try {
@@ -286,7 +313,7 @@ io.on('connection', (socket) => {
 			} catch(err) {console.log(err)} // if the user was a spectator / game isn't playing, does not have a hand.
 			try {
 				// add cards of player back into the deck
-
+				rooms[user].removeUser(socket.id);
 				delete rooms[room].users[socket.id];
 				io.in(room).emit("user count", Object.keys(rooms[room].users).length);
 				l(socket.id + " removed from " + room)
@@ -329,7 +356,6 @@ class Command {
 			output.push(Command.execute(piece, room, userID));
 		});
 		//return output.join(BREAK);
-		// TODO: command logging
 	}
 	// executes single command
 	static execute(str, room, userID){
@@ -491,7 +517,7 @@ class Deck extends CardStack {
 				this.cards.push(new Card(VALUES[v], SUITS[s]));
 
 		// Deal Jokers, if enabled
-		if(useJokers){
+		if(useJokers){ // Red and Black Jokers
 			this.cards.push(new Card(VALUES[0], SUITS[4]));
 			this.cards.push(new Card(VALUES[0], SUITS[5]));
 		}
@@ -595,15 +621,15 @@ class MaoGame {
 	reset() {
 		this.deck = new Deck("deck", this.room);
 		this.pile = new CardStack("pile", this.room);
-		Object.keys(rooms[this.room].users).forEach(function(id, index) {
-			rooms[this.room].users[id].resetHand();
+		Object.keys(rooms[this.room].users).forEach(function(userID, index) {
+			rooms[this.room].users[userID].resetHand();
 		}, this);
 		this.playing = false;
 		this.queue = [];
 		i("Game in room '" + this.room + "' reset.")
 	}
 
-	start(userID) {
+	start(firstUserID) {
 		this.playing = true;
 		i("Game started");
 		this.reset();
@@ -615,15 +641,16 @@ class MaoGame {
 		this.allDraw(5);
 		// one pile card
 		this.pile.addCardToTop(this.deck.playCard(this.deck.cards[0]));
-		this.queue = this.generateQueue(userID);
+		this.queue = this.generateQueue(firstUserID);
 		i("Completed game start.");
 	}
 
-	generateQueue(firstUser){ // similar to setTable on clientside
+	generateQueue(firstUserID){ // similar to setTable on clientside
 		var queue = []; // main queue
 		var queueEnd = []; // these play BEFORE firstUser
 		Object.keys(rooms[this.room].users).forEach(function(userID, index){
-			if (userID == firstUser || queue.length > 0){
+			// Start with first user
+			if (userID == firstUserID || queue.length > 0){
 				queue.push(userID);
 			} else {
 				queueEnd.push(userID);
@@ -663,7 +690,7 @@ class MaoGame {
 			var name = rooms[this.room].users[id].name;
 			if(id == socket.id){
 				disp = DISPLAY.user;
-				name = "you"
+				name = name + " <small>(you)</small>";
 			}
 			try	{
 				data.push({title: name, id: rooms[this.room].users[id].hand.id, display: disp});

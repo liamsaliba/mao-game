@@ -192,13 +192,13 @@ class User {
 // network handler
 io.on('connection', (socket) => {
 	l("Connected", undefined, socket.id);
-
+	
 	socket.on("join room", function(room){
 		l("Begin joining room...", room, socket.id)
 		// Leave any previous rooms
 		Object.keys(io.sockets.adapter.sids[socket.id]).filter(item => item!=socket.id).forEach(function(roomID, index){
-			console.log("!!! somehow left a room !!!")
-			leaveRoom(roomID, socket);
+			throw "user was still in room " + roomID;
+			//leaveRoom(roomID, socket);
 		});
 
 		// Make new room if it doesn't exist.
@@ -329,13 +329,16 @@ io.on('connection', (socket) => {
 			rooms[room].users[socket.id].spectator = true;
 		}
 
-		socket.on("set username" function(name) {
+		socket.on("set username", function(name) {
 			try{
 				Object.keys(rooms[room].users).forEach(function(userID, index){
 					if(rooms[room].users[userID].name == name){
 						throw "Same username";
 					}
 				});
+				io.to(room).emit("rename user", {id: socket.id, name: name});
+				socket.emit("rename user", {id: socket.id, name: name + " <small>(you)</small>"});
+
 			} catch (e) {
 				l(e);
 			}
@@ -471,7 +474,7 @@ class CardStack {
 
 	displayRemoveCard(card) {
 		io.in(this.room).emit("display remove card", {id: this.id, cardID: card.id});
-		l("Removing card in all displays.", this.room, this.id);
+		//l("Removing card in all displays.", this.room, this.id);
 	}
 
 	// displays whole hand.
@@ -517,14 +520,14 @@ class CardStack {
 		this.cards.push(card);
 		io.in(this.room).emit("display card bottom", {id: this.id, card: card.toDisplay(this.userID)})
 		this.displayCount();
-		l("Adding card to bottom", this.room, this.id);
+		//l("Adding card to bottom", this.room, this.id);
 	}
 
 	addCardToTop(card){
 		this.cards.unshift(card);
 		io.in(this.room).emit("display card top", {id: this.id, card: card.toDisplay(this.userID)});
 		this.displayCount();
-		l("Adding card to top", this.room, this.id);
+		//l("Adding card to top", this.room, this.id);
 	}
 
 	removeCard(card){

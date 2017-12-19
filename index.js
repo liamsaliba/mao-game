@@ -29,7 +29,7 @@ http.listen(PORTNUMBER, function(){
 // Hashing card IDs
 var Hashids = require('hashids');
 var userhashids = new Hashids(); //TODO hash user ids
-var cardhashids;
+var cardhashids = new Hashids(Math.random()*42);
 
 // Username generator
 var Moniker = require("moniker")
@@ -285,7 +285,6 @@ io.on('connection', (socket) => {
 		if(socket.user.isInPlay){
 			var room = socket.roomID;
 			var origin = data.origin.replace("cardstack-", "");
-			cardhashids = new Hashids(origin); 
 			// decode card ID, convert to object
 			var cardID = cardhashids.decode(data.cardID.replace("card-", ""));
 			var destination = data.destination.replace("cardstack-", "");
@@ -682,9 +681,8 @@ class Card {
 		return [value, suit].join("<br>");
 	};
 	// info used to display a specific card
-	toDisplay(parent) {
-		cardhashids = new Hashids(parent);
-		return {colour: this.suit.colour, id: "card-" + cardhashids.encode(this.numID), str: this.toDisplayString() };
+	toDisplay() {
+		return {colour: this.suit.colour, id: this.id, str: this.toDisplayString() };
 	}
 	// use 14 instead of 13 to ensure Joker gets its own distinct ID.
 	get numID() {
@@ -693,7 +691,7 @@ class Card {
 	};
 
 	get id() {
-		return "card-" + this.numID;
+		return "card-" + cardhashids.encode(this.numID);
 	}
 
 	static getSuitFromID(id) {

@@ -292,33 +292,36 @@ io.on('connection', (socket) => {
 			var movingCard = new Card(Card.getValueFromID(cardID), Card.getSuitFromID(cardID));
 			l("Moving " + movingCard.toString() + " from " + origin + " to " + destination, room, socket.id);
 
+			if(socket.id == rooms[room].game.turn){
+				i("Playing in turn.", room, socket.id);
+			} else {
+				i("Playing OUT of turn.", room, socket.id);
+				// penalise
+				rooms[room].users[socket.id].hand.addCardToTop(rooms[room].game.deck.playCard(rooms[room].game.deck.cards[0]));
+				return;
+			}
 			// try catch throw exceptions
 			// play card logic TODO: functionalise
 			if (origin == destination) {
-				// Didn't move, so do nothing.
+				// Nothing move, do nothing
 				l("Origin = destination, no move.")
 				return;
 			} else if (origin == "deck"){
 				if (destination == socket.id) {
 					// force taking from the top of the deck
 					rooms[room].users[socket.id].hand.addCardToTop(rooms[room].game.deck.playCard(rooms[room].game.deck.cards[0]));
-					rooms[room].game.attemptTurn(socket);
-					// If they drew a card, they get the card,
-					// as well as the penalty card.
 					l("Moved from deck to hand.")
 				} else {
-					// can't draw cards for other players
+					// can only pass to yourself, use penalty button
+					// to penalise other players
 					l("Can't move from deck to " + destination)
 				}
 			} else if (origin == socket.id) {
 				if (rooms[room].users[socket.id].hand.hasCard(movingCard)){
 					if (destination == "pile"){
 						// can move from hand to play cards.
-						if(rooms[room].game.attemptTurn(socket)){
-							rooms[room].game.pile.addCardToTop(rooms[room].users[socket.id].hand.playCard(movingCard));
-							l("Moved from hand to pile.")
-						}
-						// If they played out of turn, don't play card to pile.
+						rooms[room].game.pile.addCardToTop(rooms[room].users[socket.id].hand.playCard(movingCard))
+						l("Moved from hand to pile.")
 					} else {
 						// can move from hand to other hand for specific rules (IMPLEMENT LATER.)
 						// for now, can't do that.
@@ -338,6 +341,8 @@ io.on('connection', (socket) => {
 				// can't do that.
 				l("Can't move cards from other hands.");
 			}
+			// after successful turn, advance it.
+			rooms[room].game.nextTurn();
 		}
 	});
 
@@ -810,18 +815,4 @@ class MaoGame {
 			} catch(err) {}; // no need to refresh display if they don't have a hand
 		}, this);
 	};
-
-	attemptTurn(socket){
-		if(socket.id == this.turn){
-			i("Playing in turn.", socket.roomID, socket.id);
-			// after successful turn, advance it.
-			this.nextTurn();
-			return true;
-		} else {
-			i("Playing OUT of turn.", socket.roomID, socket.id);
-			// penalise for playing out of turn
-			rooms[socket.roomID].users[socket.id].hand.addCardToTop(this.deck.playCard(this.deck.cards[0]));
-			return false;
-		}
-	}
 }

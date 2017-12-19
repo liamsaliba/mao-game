@@ -295,7 +295,9 @@ socket.on("clear cardstack", function(data) {
 	$("#" + data.id + " .cardstack li").remove();
 })
 
-
+socket.on("rename user", function(data){
+	$("#" + data.id + " .cardstack-title").html(data.name);
+})
 
 
 socket.on("display remove card", function(data) {

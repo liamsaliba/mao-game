@@ -366,6 +366,7 @@ io.on('connection', (socket) => {
 	});
 
 	socket.on("set username", function(name) {
+		l("Setting username to " + name, socket.roomID, socket.id);
 		if(socket.user.isPlayer){
 			Object.keys(rooms[socket.roomID].users).forEach(function(userID, index){
 				if(rooms[socket.roomID].users[userID].name == name){
@@ -374,26 +375,29 @@ io.on('connection', (socket) => {
 			});
 			socket.user.name = name;
 			rooms[socket.roomID].users[socket.id].name = name;
-			io.to(room).emit("rename user", {id: socket.id, name: name});
-			socket.emit("rename user", {id: socket.id, name: name + " <small>(you)</small>"});
+			io.to(socket.roomID).emit("rename user", {id: rooms[socket.roomID].users[socket.id].hand.id, name: name});
+			socket.emit("rename user", {id: rooms[socket.roomID].users[socket.id].hand.id, name: name + " <small>(you)</small>"});
+			l("Username set to " + name, socket.roomID, socket.id);
 		}
-	})
+	});
 
 	socket.on("leave room", function() {
+		l("Leaving room...", socket.roomID, socket.id)
 		if(socket.roomID !== "undefined"){
 			socket.leave(socket.roomID);
 			leaveRoom(socket);
 			socket.user.reset();
 		}
+		l("Left room.", socket.roomID, socket.id);
 		socket.roomID = undefined;
 	});
 
 
 	socket.on("disconnect", function(){
-		l("Disconnecting...", room, socket.id)
+		l("Disconnecting...", socket.roomID, socket.id)
 		if(socket.roomID !== "undefined")
-			leaveRoom(room, socket);
-		l("Disconnected", room, socket.id);
+			leaveRoom(socket);
+		l("Disconnected", socket.roomID, socket.id);
 	});
 });
 

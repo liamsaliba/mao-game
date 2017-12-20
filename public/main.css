@@ -82,7 +82,7 @@ main {
 }
 
 .message-body {
-	background-color: #cccccccc;
+	background-color: #ffffffcc;
 	border-radius: 0.3rem;	
 	padding: 0.5rem;
     word-wrap: break-word;
@@ -95,7 +95,7 @@ main {
 }
 
 .cardstack-message .message-body {
-	max-width: 8rem;
+	width: fit-content;
     position: absolute;
     top: -1rem;
     left: 0;
@@ -182,8 +182,9 @@ nav li {
 	padding: 5px;
 }
 
-.code {
-	color: #666;
+.penalty {
+	background-color: #dd0000cc;
+	color: white;
 	font-style: italic;
 }
 

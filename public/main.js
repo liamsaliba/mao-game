@@ -84,8 +84,18 @@ function output2(str, format) {
 }
 
 function output(data){
+	if(data.format === undefined) data.format = "";
+	else if (data.format === "penalty"){
+		// self gets a penalty.
+		if(socket.id == data.id){
+		//	$(body)
+		//	$(body).css({"background": "red"}).delay
+		}
+
+	}
+
 	$("#messages").append("<li>" + data.name + " <span class='message-body " + data.format + "'>" + data.message + "</span></li>");
-	$("#" + data.id + " .cardstack-message").finish().fadeIn("fast").html("<span class='message-body " + data.format + "'>" + data.message + "</span>").delay(5000).fadeOut("fast");
+	$("#cardstack-" + data.id + " .cardstack-message").finish().fadeIn("fast").html("<span class='message-body " + data.format + "'>" + data.message + "</span>").delay(3000).fadeOut("fast");
 }
 
 function init() {
@@ -228,7 +238,6 @@ $(document).ready(function() { init(); })
 //window.onbeforeunload = function() {return true;};
 
 window.onunload = function() {
-	socket.emit('leave');
 	socket.disconnect();
 };
 

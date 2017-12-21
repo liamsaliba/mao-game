@@ -183,12 +183,11 @@ socket.on("connect", function() {
 	$("#info-id").html("id=" + socket.id);
 	resetDisplay();
 });
-
+// delete all cardstacks and remove begin
 function resetDisplay() {
-	$(".cardstack-container").remove(); // resets display
+	$(".cardstack-container").remove();
 	$("#btn-begin").finish().fadeOut("fast");
 	cardstacks = [];
-	console.log("Reset display.")
 }
 
 socket.on("reconnect", function(){

@@ -166,7 +166,7 @@ const socket = io.connect("/");
 
 // get room by URL
 var room = "";
-var cardstacks;
+var cardstacks = [];
 if(window.location.pathname.slice(0, 6) == "/room/")
 	room = window.location.pathname.slice(6);
 
@@ -181,7 +181,6 @@ socket.on("connect", function() {
 	} catch(e){};
 	$("#info-online").html("connected");
 	$("#info-id").html("id=" + socket.id);
-	resetDisplay();
 });
 // delete all cardstacks and remove begin
 function resetDisplay() {
@@ -192,6 +191,8 @@ function resetDisplay() {
 
 socket.on("reconnect", function(){
 	console.log("reconnected!");
+	socket.emit("leave room");
+	socket.emit("join room", room);
 	// TODO: handle continue
 	// this is very broken atm
 })

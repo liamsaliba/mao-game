@@ -162,6 +162,12 @@ class Room {
 		this.game.queue.remove(this.game.queue.indexOf(userID));
 		l("Removed user " + userID, this.id)
 	}
+
+	findStack(id) {
+		if(id == "deck") return this.game.deck;
+		if(id == "pile") return this.game.pile;
+		return this.users[id].hand;
+	}
 }
 
 class User {
@@ -234,12 +240,119 @@ class User {
 		return userGen.choose();
 	}
 
-	emitPenalty(message, socket){
+	takePenalty(penalty){
+		this.moveCard(rooms[this.roomID].game.deck.cards[0], "deck", this.id, true);
+		this.emitPenalty(penalty);
+	}
+
+	emitPenalty(message){
 		io.in(this.roomID).emit("message", {name: this.name, id: this.id, message: message, format: "penalty"});
 	}
 
 	emitMessage(message){
 		io.in(this.roomID).emit("message", {name: this.name, id: this.id, message: message});
+	}
+
+	makeMove(data, animateSelf){
+		if(this.isInPlay){
+			var origin = data.origin.replace("cardstack-", "");
+			// Guess what the destination would be
+			if(data.destination === undefined){
+				if(origin == "deck") data.destination = this.hand.id;
+				else data.destination = "cardstack-pile";
+			}
+			var destination = data.destination.replace("cardstack-", "");
+			// decode card ID, convert to object
+			var cardID = cardhashids.decode(data.cardID.replace("card-", ""));
+			var movingCard = new Card(Card.getValueFromID(cardID), Card.getSuitFromID(cardID));
+
+			l("Moving " + movingCard.toString() + " from " + origin + " to " + destination, this.roomID, this.id);
+
+			if (origin == destination) {
+				// Didn't move, so do nothing.
+				l("Origin = destination, no move.")
+				return;
+			} else if (origin == "deck"){
+				if (destination == this.id) {
+					// Attempting to draw a card...
+					// force taking from the top of the deck
+					movingCard = rooms[this.roomID].game.deck.cards[0];
+					this.moveCard(movingCard, data.origin, data.destination, animateSelf);
+
+					var penalty = rooms[this.roomID].game.attemptTurn(this.socket);
+					if(penalty){
+						var _this = this;
+						setTimeout(function(){
+							_this.takePenalty(penalty);
+						}, 500);
+					};
+					// If they drew a card, they get the card,
+					// as well as the penalty card.
+					l("Moved from deck to hand.")
+				} else {
+					// can't draw cards for other players
+					l("Can't move from deck to " + destination)
+				}
+			} else if (origin == this.id) {
+				if (this.hand.hasCard(movingCard)){
+					if (destination == "pile"){
+						// can move from hand to play cards.
+						this.moveCard(movingCard, data.origin, data.destination, animateSelf);
+						l("Moved from hand to pile.")
+
+						var penalty = rooms[this.roomID].game.attemptTurn(this.socket);
+						// undefined is not true or false.
+						if(penalty == undefined) penalty = rooms[this.roomID].game.attemptPlay(movingCard, this.socket);
+						if(penalty){
+							// penalty, move card back
+							// penalise for playing out of turn
+							var _this = this;
+							setTimeout(function(){
+								// move card back
+								_this.moveCard(movingCard, data.destination, data.origin, true);
+								// take penalty card
+								_this.takePenalty(penalty);
+							}, 500);
+							
+						}
+					} else {
+						// can move from hand to other hand for specific rules (IMPLEMENT LATER.)
+						// for now, can't do that.
+						l("Can't move from hand to " + destination)
+					}
+				} else {
+					// make a big EXCEPTION because how would this happen?
+					l("Hand doesn't have that card.")
+				}
+			} else if (origin == "pile") {
+				l("Can't move cards from the pile.")
+			} else {
+				l("Can't move cards from other hands.");
+			}
+		}
+	}
+
+	moveCard(movingCard, origin, destination, animateSelf){
+		var cardID = movingCard.id;
+		var displayCard = movingCard.toDisplay(true);
+		if(destination == "cardstack-pile")
+			displayCard = movingCard.toDisplay();
+		var cardInfo = {origin: origin, destination: destination, cardID: cardID, card: displayCard};
+		if(animateSelf){
+			io.in(this.roomID).emit("display move card", cardInfo);
+		} else {
+			this.socket.to(this.roomID).emit("display move card", cardInfo);
+			// not animated for self
+			this.socket.emit("display remove card", {id: origin, cardID: cardID});
+			this.socket.emit("display card top", {id: destination, card: movingCard.toDisplay()});
+		}
+		var originStack = rooms[this.roomID].findStack(origin.replace("cardstack-", ""));
+		var destinationStack = rooms[this.roomID].findStack(destination.replace("cardstack-", ""));
+		
+		originStack.removeCard(movingCard);
+		originStack.displayCount();
+		destinationStack.cards.unshift(movingCard);
+		destinationStack.displayCount();
 	}
 }
 
@@ -298,93 +411,12 @@ io.on('connection', (socket) => {
 		}
 	});
 
+	socket.on("move card", function(data){
+		socket.user.makeMove(data, false);
+	});
+
 	socket.on("play card", function(data){
-		if(socket.user.isInPlay){
-			var room = socket.roomID;
-			var origin = data.origin.replace("cardstack-", "");
-			// Guess what the destination would be
-			if(data.destination === undefined){
-				if(origin == "deck") data.destination = "cardstack-" + socket.id;
-				else data.destination = "cardstack-pile";
-			}
-			var destination = data.destination.replace("cardstack-", "");
-			// decode card ID, convert to object
-			var cardID = cardhashids.decode(data.cardID.replace("card-", ""));
-			var movingCard = new Card(Card.getValueFromID(cardID), Card.getSuitFromID(cardID));
-			l("Moving " + movingCard.toString() + " from " + origin + " to " + destination, room, socket.id);
-
-			// try catch throw exceptions
-			// play card logic TODO: functionalise
-			if (origin == destination) {
-				// Didn't move, so do nothing.
-				l("Origin = destination, no move.")
-				return;
-			} else if (origin == "deck"){
-				if (destination == socket.id) {
-					// Attempting to draw a card...
-					// force taking from the top of the deck
-					/****MOVE*/
-
-					
-					// END MOVE
-					socket.user.hand.addCardToTop(rooms[room].game.deck.playCard(rooms[room].game.deck.cards[0]));
-
-					var penalty = rooms[room].game.attemptTurn(socket);
-					if(penalty){
-						setTimeout(function(){
-							socket.user.hand.addCardToTop(rooms[room].game.deck.playCard(rooms[room].game.deck.cards[0]));
-							socket.user.emitPenalty(penalty);
-						}, 500);
-					};
-					// If they drew a card, they get the card,
-					// as well as the penalty card.
-					l("Moved from deck to hand.")
-				} else {
-					// can't draw cards for other players
-					l("Can't move from deck to " + destination)
-				}
-			} else if (origin == socket.id) {
-				if (socket.user.hand.hasCard(movingCard)){
-					if (destination == "pile"){
-						// can move from hand to play cards.
-						rooms[room].game.pile.addCardToTop(socket.user.hand.playCard(movingCard));
-						l("Moved from hand to pile.")
-
-						var penalty = rooms[room].game.attemptTurn(socket);
-						// undefined is not true or false.
-						if(penalty == undefined) penalty = rooms[room].game.attemptPlay(movingCard, socket);
-						if(penalty){
-							// penalty, move card back
-							// penalise for playing out of turn
-							setTimeout(function(){
-								// move card back
-								socket.user.hand.addCardToTop(rooms[room].game.pile.playCard(rooms[room].game.pile.cards[0]));
-								// take penalty card
-								socket.user.hand.addCardToTop(rooms[room].game.deck.playCard(rooms[room].game.deck.cards[0]));
-								socket.user.emitPenalty(penalty)
-							}, 500);
-							
-						}
-					} else {
-						// can move from hand to other hand for specific rules (IMPLEMENT LATER.)
-						// for now, can't do that.
-						l("Can't move from hand to " + destination)
-					}
-				} else {
-					// you don't have that card
-					// no penalty.
-					// make a big EXCEPTION because how would this happen?
-					l("Hand doesn't have that card.")
-				}
-			} else if (origin == "pile") {
-				// can't move cards from the pile.
-				l("Can't move cards from the pile.")
-			} else {
-				// attempted move from another player's hand.
-				// can't do that.
-				l("Can't move cards from other hands.");
-			}
-		}
+		socket.user.makeMove(data, true)
 	});
 
 	socket.on("sort hand", function(){
@@ -443,7 +475,6 @@ function leaveRoom(socket) {
 	var id = socket.id;
 	l("Leaving room...", room, id);
 
-	// surround in try catch - room may not exist
 	if(rooms[room] === undefined){
 		l("(Room doesn't exist)")
 		return;
@@ -679,8 +710,8 @@ class Deck extends CardStack {
 
 	// Only hide initially - cards are never added back to
 	// the deck.
-	displayHand() {
-		io.in(this.room).emit("display cards", {id: this.id, cards: this.toDisplay(true)});
+	toDisplay(){
+		return super.toDisplay(true);
 	}
 }
 
@@ -859,7 +890,7 @@ class MaoGame {
 	// display table to user when game has already started
 	displayTable(socket){
 		socket.emit("new cardstacks", this.setUpAllCardStacks(socket));
-		this.deck.refreshDisplay(socket, true);
+		this.deck.refreshDisplay(socket, true); // display back
 		this.pile.refreshDisplay(socket);
 		Object.keys(rooms[this.roomID].users).forEach(function(id, index) {
 			try {

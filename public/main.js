@@ -323,7 +323,8 @@ socket.on("rename user", function(data){
 
 socket.on("display move card", function(data){
 	var card = $("#" + data.origin + " #" + data.cardID).remove();
-	$("#" + data.destination + " .cardstack").prepend(card);
+	//$("#" + data.destination + " .cardstack").prepend(card);
+	$("#" + data.destination + " .cardstack").prepend(displayCard(data.card, data.destination));
 })
 
 socket.on("display remove card", function(data) {
@@ -397,7 +398,7 @@ function dropCard(event){
 	if(event.target.id == "") destination = event.path[2].id;
 	else destination = event.path[3].id; // drag to card in container
 
-	socket.emit("play card", {cardID: data[0], origin: data[1], destination: destination});
+	socket.emit("move card", {cardID: data[0], origin: data[1], destination: destination});
 	// server handles the rest.
 	console.log("dropped")
 	focus();

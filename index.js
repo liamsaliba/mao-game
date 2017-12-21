@@ -190,10 +190,6 @@ class User {
 			// Display all hands to this user
 			this.socket.emit("new cardstacks", rooms[this.roomID].game.setUpAllCardStacks(this.socket));
 
-			// Show play button if enough players are ready.
-			if(Object.keys(rooms[this.roomID].users).length > 1){
-				io.in(this.roomID).emit("show begin");
-			}
 			l("Joined room as player.", this.roomID, this.id);
 		} else { // Join as spectator
 			l("Game has started, joining in spectator mode...", this.roomID, this.id);
@@ -271,7 +267,10 @@ io.on('connection', (socket) => {
 		// This method and subsequent methods are applied to both room[roomID].users[socket.id] and socket.user
 		socket.user.joinRoom();
 		l("User added to room.", roomID, socket.id);
-
+		
+		// Show play button if enough players are ready.
+		if(Object.keys(rooms[socket.roomID].users).length > 1)
+			io.in(socket.roomID).emit("show begin");
 		// Push user count to all clients
 		io.in(roomID).emit("user count", Object.keys(rooms[roomID].users).length);
 	});
@@ -303,9 +302,17 @@ io.on('connection', (socket) => {
 				return;
 			} else if (origin == "deck"){
 				if (destination == socket.id) {
+					// Attempting to draw a card...
 					// force taking from the top of the deck
-					rooms[room].users[socket.id].hand.addCardToTop(rooms[room].game.deck.playCard(rooms[room].game.deck.cards[0]));
-					rooms[room].game.attemptTurn(socket);
+					socket.user.hand.addCardToTop(rooms[room].game.deck.playCard(rooms[room].game.deck.cards[0]));
+
+					var penalty = rooms[room].game.attemptTurn(socket);
+					if(penalty){
+						setTimeout(function(){
+							socket.user.hand.addCardToTop(rooms[room].game.deck.playCard(rooms[room].game.deck.cards[0]));
+							socket.user.emitPenalty(penalty);
+						}, 500);
+					};
 					// If they drew a card, they get the card,
 					// as well as the penalty card.
 					l("Moved from deck to hand.")
@@ -314,14 +321,26 @@ io.on('connection', (socket) => {
 					l("Can't move from deck to " + destination)
 				}
 			} else if (origin == socket.id) {
-				if (rooms[room].users[socket.id].hand.hasCard(movingCard)){
+				if (socket.user.hand.hasCard(movingCard)){
 					if (destination == "pile"){
 						// can move from hand to play cards.
-						if(rooms[room].game.attemptTurn(socket)){
-							rooms[room].game.pile.addCardToTop(rooms[room].users[socket.id].hand.playCard(movingCard));
-							l("Moved from hand to pile.")
+						rooms[room].game.pile.addCardToTop(socket.user.hand.playCard(movingCard));
+						l("Moved from hand to pile.")
+
+						var penalty = rooms[room].game.attemptTurn(socket);
+						if(!penalty) penalty = rooms[room].game.attemptPlay(movingCard, socket);
+						if(penalty){
+							// penalty, move card back
+							// penalise for playing out of turn
+							setTimeout(function(){
+								// move card back
+								socket.user.hand.addCardToTop(rooms[room].game.pile.playCard(rooms[room].game.pile.cards[0]));
+								// take penalty card
+								socket.user.hand.addCardToTop(rooms[room].game.deck.playCard(rooms[room].game.deck.cards[0]));
+								socket.user.emitPenalty(penalty)
+							}, 500);
+							
 						}
-						// If they played out of turn, don't play card to pile.
 					} else {
 						// can move from hand to other hand for specific rules (IMPLEMENT LATER.)
 						// for now, can't do that.
@@ -807,13 +826,15 @@ class MaoGame {
 			i("Playing in turn.", socket.roomID, socket.id);
 			// after successful turn, advance it.
 			this.nextTurn();
-			return true;
+			return;
 		} else {
 			i("Playing OUT of turn.", socket.roomID, socket.id);
-			// penalise for playing out of turn
-			rooms[socket.roomID].users[socket.id].hand.addCardToTop(this.deck.playCard(this.deck.cards[0]));
-			socket.user.emitPenalty(PENALTY.outOfTurn)
-			return false;
+			return PENALTY.outOfTurn;
 		}
+	}
+
+	attemptPlay(card, socket){
+		//if()
+		return;
 	}
 }

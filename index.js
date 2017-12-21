@@ -212,7 +212,7 @@ class User {
 	rename(name){
 		if(name !== this.name){
 			this.name = name;
-			io.to(this.roomID).emit("rename user", {id: this.hand.id, name: this.name});
+			this.socket.to(this.roomID).emit("rename user", {id: this.hand.id, name: this.name});
 			this.socket.emit("rename user", {id: this.hand.id, name: this.name + " <small>(you)</small>"});
 			l("Username set to " + this.name, this.roomID, this.id);
 		}
@@ -254,14 +254,16 @@ io.on('connection', (socket) => {
 			l("Still in room!!!", socket.roomID, socket.id);
 			leaveRoom(socket); // still in room;
 		}
+		// Ensure rooms can never have the same ids as hands.
+		roomID = "r/" + roomID;
 		socket.roomID = roomID;
 
 		l("Joining room...", roomID, socket.id)
 
 		// Leave any previous rooms (DEBUG) - should never happen.
 		Object.keys(io.sockets.adapter.sids[socket.id]).filter(item => item!=socket.id).forEach(function(id, index){
-			console.log("user was still in room " + id);
-			leaveRoom(socket);
+			throw ("user was still in room " + id);
+			//leaveRoom(socket);
 		});
 
 		// Make new room if it doesn't exist.
@@ -302,8 +304,8 @@ io.on('connection', (socket) => {
 			var origin = data.origin.replace("cardstack-", "");
 			// Guess what the destination would be
 			if(data.destination === undefined){
-				if(origin == "deck") data.destination = socket.id;
-				else data.destination = "pile";
+				if(origin == "deck") data.destination = "cardstack-" + socket.id;
+				else data.destination = "cardstack-pile";
 			}
 			var destination = data.destination.replace("cardstack-", "");
 			// decode card ID, convert to object
@@ -321,6 +323,10 @@ io.on('connection', (socket) => {
 				if (destination == socket.id) {
 					// Attempting to draw a card...
 					// force taking from the top of the deck
+					/****MOVE*/
+
+					
+					// END MOVE
 					socket.user.hand.addCardToTop(rooms[room].game.deck.playCard(rooms[room].game.deck.cards[0]));
 
 					var penalty = rooms[room].game.attemptTurn(socket);
@@ -531,6 +537,14 @@ class CardStack {
 		return this.cards.length;
 	};
 
+	get isHand() {
+		try{
+			return rooms[this.room].users[this.userID] !== undefined;
+		} catch(e){
+			return false;
+		}
+	}
+
 	getIndex(card) {
 		return this.cards.findIndex(card2 => card2.id === card.id);
 	};
@@ -546,9 +560,9 @@ class CardStack {
 		l("Sent update display.", this.room, this.id);
 	}
 	// to an individual user
-	refreshDisplay(socket) {
+	refreshDisplay(socket, hidden) {
 		socket.emit("clear cardstack", {id: this.id});
-		socket.emit("display cards", {id: this.id, cards: this.toDisplay()});
+		socket.emit("display cards", {id: this.id, cards: this.toDisplay(hidden)});
 		socket.emit("display cardcount", {id: this.id, count: this.length});
 		l("Refreshed display.", this.room, this.id)
 	}
@@ -560,14 +574,21 @@ class CardStack {
 
 	// displays whole hand.
 	displayHand() {
-		io.in(this.room).emit("display cards", {id: this.id, cards: this.toDisplay()});
+		if(this.isHand){
+			var socket = rooms[this.room].users[this.userID].socket;
+			socket.to(this.room).emit("display cards", {id: this.id, cards: this.toDisplay(true)});
+			socket.emit("display cards", {id: this.id, cards: this.toDisplay()});
+		} else {
+			io.in(this.room).emit("display cards", {id: this.id, cards: this.toDisplay()});
+		}
+		
 		l("Displaying hand.", this.room, this.id);
 	}
 
-	toDisplay() {
+	toDisplay(hidden) {
 		var displayCards = [];
 		this.cards.forEach(function(card){
-			displayCards.push(card.toDisplay(this.userID));
+			displayCards.push(card.toDisplay(hidden));
 		}, this);
 		return displayCards;
 	}
@@ -597,16 +618,15 @@ class CardStack {
 		l("Sorted.", this.room, this.id)
 	}
 
-	addCardToBottom(card) {
-		this.cards.push(card);
-		io.in(this.room).emit("display card bottom", {id: this.id, card: card.toDisplay(this.userID)})
-		this.displayCount();
-		//l("Adding card to bottom", this.room, this.id);
-	}
-
 	addCardToTop(card){
 		this.cards.unshift(card);
-		io.in(this.room).emit("display card top", {id: this.id, card: card.toDisplay(this.userID)});
+		if(this.isHand){
+			var socket = rooms[this.room].users[this.userID].socket;
+			socket.to(this.room).emit("display card top", {id: this.id, card: card.toDisplay(true)});
+			socket.emit("display card top", {id: this.id, card: card.toDisplay()});
+		} else {
+			io.in(this.room).emit("display card top", {id: this.id, card: card.toDisplay()});
+		}
 		this.displayCount();
 		//l("Adding card to top", this.room, this.id);
 	}
@@ -657,9 +677,10 @@ class Deck extends CardStack {
 		l("Deck made.", this.room, this.id);
 	}
 
-	// displays whole hand.
+	// Only hide initially - cards are never added back to
+	// the deck.
 	displayHand() {
-		super.displayHand();
+		io.in(this.room).emit("display cards", {id: this.id, cards: this.toDisplay(true)});
 	}
 }
 
@@ -710,7 +731,8 @@ class Card {
 	toString() {
 		return [this.value, this.suit].join(" ");
 	};
-	toDisplayString() {
+	toDisplayString(hidden) {
+		if(hidden) return "ᶜʰᵉᵃᵗ<br>ᶜʰᵉᵃᵗ";
 		// fix a formatting issue
 		var value = this.value;
 		var suit = this.suit + "&#xFE0E;";
@@ -719,8 +741,10 @@ class Card {
 		return [value, suit].join("<br>");
 	};
 	// info used to display a specific card
-	toDisplay() {
-		return {colour: this.suit.colour, id: this.id, str: this.toDisplayString() };
+	toDisplay(hidden) {
+		var colour = this.suit.colour;
+		if(hidden) colour = "red";
+		return {colour: colour, id: this.id, str: this.toDisplayString(hidden)};
 	}
 	// use 14 instead of 13 to ensure Joker gets its own distinct ID.
 	get numID() {
@@ -835,11 +859,11 @@ class MaoGame {
 	// display table to user when game has already started
 	displayTable(socket){
 		socket.emit("new cardstacks", this.setUpAllCardStacks(socket));
-		this.deck.refreshDisplay(socket);
+		this.deck.refreshDisplay(socket, true);
 		this.pile.refreshDisplay(socket);
 		Object.keys(rooms[this.roomID].users).forEach(function(id, index) {
 			try {
-				rooms[this.roomID].users[id].hand.refreshDisplay(socket);
+				rooms[this.roomID].users[id].hand.refreshDisplay(socket, true);
 			} catch(err) {}; // no need to refresh display if they don't have a hand
 		}, this);
 	};
@@ -865,8 +889,11 @@ class MaoGame {
 }
 var RULES = {};
 
+// much of this is temporary.
 class Rule {
-	constructor(name){
-
+	constructor(name, toRun, penaltyText){
+		this.name = name;
+		this.toRun = toRun;
+		this.penaltyText = penaltyText;
 	}
 }

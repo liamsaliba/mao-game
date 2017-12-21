@@ -309,7 +309,6 @@ nav li {
 .back .card, .altuser .card, .deck .card, #btn-card {
 	/* set background image */
 	color: transparent;
-	padding: 1rem;
 	background: url(http://cdn.shopify.com/s/files/1/0200/7616/products/playing-cards-bicycle-rider-back-2_grande.png?v=1494193481);
 	background-size: cover;
 	background-position: center;

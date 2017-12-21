@@ -321,6 +321,10 @@ socket.on("rename user", function(data){
 	$("#" + data.id + " .cardstack-title").html(data.name);
 })
 
+socket.on("display move card", function(data){
+	var card = $("#" + data.origin + " #" + data.cardID).remove();
+	$("#" + data.destination + " .cardstack").prepend(card);
+})
 
 socket.on("display remove card", function(data) {
 	$("#" + data.id + " #" + data.cardID).remove();

@@ -100,7 +100,7 @@ const DISPLAY = {default: "", back: "back", alternate: "altuser", pile: "pile", 
 // server start calls
 function init() {
 	setTimeout(function(){
-		refreshClients();
+		//refreshClients();
 	}, 1000); // connected clients have time to reconnect before reloading DEBUG ENABLED
 	rooms = {};
 	i("Server initialised.")
@@ -250,14 +250,18 @@ io.on('connection', (socket) => {
 	socket.user = new User(socket, User.generateName());
 
 	socket.on("join room", function(roomID){
+		if(socket.roomID){
+			l("Still in room!!!", socket.roomID, socket.id);
+			leaveRoom(socket); // still in room;
+		}
 		socket.roomID = roomID;
 
 		l("Joining room...", roomID, socket.id)
 
 		// Leave any previous rooms (DEBUG) - should never happen.
 		Object.keys(io.sockets.adapter.sids[socket.id]).filter(item => item!=socket.id).forEach(function(id, index){
-			throw "user was still in room " + id;
-			//leaveRoom(roomID, socket);
+			console.log("user was still in room " + id);
+			leaveRoom(socket);
 		});
 
 		// Make new room if it doesn't exist.
@@ -296,9 +300,14 @@ io.on('connection', (socket) => {
 		if(socket.user.isInPlay){
 			var room = socket.roomID;
 			var origin = data.origin.replace("cardstack-", "");
+			// Guess what the destination would be
+			if(data.destination === undefined){
+				if(origin == "deck") data.destination = socket.id;
+				else data.destination = "pile";
+			}
+			var destination = data.destination.replace("cardstack-", "");
 			// decode card ID, convert to object
 			var cardID = cardhashids.decode(data.cardID.replace("card-", ""));
-			var destination = data.destination.replace("cardstack-", "");
 			var movingCard = new Card(Card.getValueFromID(cardID), Card.getSuitFromID(cardID));
 			l("Moving " + movingCard.toString() + " from " + origin + " to " + destination, room, socket.id);
 
@@ -336,7 +345,8 @@ io.on('connection', (socket) => {
 						l("Moved from hand to pile.")
 
 						var penalty = rooms[room].game.attemptTurn(socket);
-						if(!penalty) penalty = rooms[room].game.attemptPlay(movingCard, socket);
+						// undefined is not true or false.
+						if(penalty == undefined) penalty = rooms[room].game.attemptPlay(movingCard, socket);
 						if(penalty){
 							// penalty, move card back
 							// penalise for playing out of turn
@@ -429,11 +439,11 @@ function leaveRoom(socket) {
 
 	// surround in try catch - room may not exist
 	if(rooms[room] === undefined){
-		console.log("Room doesn't exist")
+		l("(Room doesn't exist)")
 		return;
 	}
 	if(rooms[room].users[id] === undefined){
-		console.log("User doesn't exist in room")
+		l("(User doesn't exist in room)")
 		return;
 	}
 
@@ -460,6 +470,7 @@ function leaveRoom(socket) {
 			}
 		}
 	}
+	delete socket.roomID;
 	l("Left room.", room, id)
 }
 
@@ -730,7 +741,7 @@ class Card {
 	}
 }
 
-const PENALTY = {outOfTurn: "Penalty for playing out of turn!"};
+const PENALTY = {outOfTurn: "Penalty for playing out of turn!", invalidCard: "Penalty for playing out of suit!"};
 
 class MaoGame {
 	constructor(roomID) {
@@ -784,6 +795,10 @@ class MaoGame {
 
 	get turn() {
 		return this.queue[0];
+	}
+
+	get prevTurn() {
+		return this.queue[-1];
 	}
 
 	allDraw(num) {
@@ -840,9 +855,18 @@ class MaoGame {
 			return PENALTY.outOfTurn;
 		}
 	}
-
+	// always performed AFTER card move (since penalty is checked AFTER move).
 	attemptPlay(card, socket){
-		//if()
-		return;
+		// enforces uno rules
+		if(this.pile.cards[1].suit == card.suit || this.pile.cards[1].value == card.value)
+			return;
+		return PENALTY.invalidCard;
+	}
+}
+var RULES = {};
+
+class Rule {
+	constructor(name){
+
 	}
 }

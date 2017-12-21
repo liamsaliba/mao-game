@@ -98,37 +98,44 @@ function output(data){
 	$("#cardstack-" + data.id + " .cardstack-message").finish().fadeIn("fast").html("<span class='message-body " + data.format + "'>" + data.message + "</span>").delay(3000).fadeOut("fast");
 }
 
-function init() {
+function focus() {
 	jInput.focus();
 }
 
+function init() {
+	focus();
+}
+
 $("main").click(function(){
-	jInput.focus();
+	focus();
 	$("nav").slideUp();
 });
 
 $("#btn-settings").click(function(){
+	focus();
 	$("nav").slideDown();
 });
 
 $("#btn-close-settings").click(function(){
+	focus();
 	$("nav").slideUp();
 });
 
 $("#btn-theme").click(function(){
+	focus();
 	blackTheme = !blackTheme;
 	setTheme();
 });
 
 $("#btn-room").click(function(){
-	jInput.focus();
+	focus();
 	inputMode = inputModes.room;
 	jOverlay.finish().fadeIn();
 	jInput.attr('placeholder', 'enter room...');
 });
 
 $("#btn-username").click(function(){
-	jInput.focus();
+	focus();
 	inputMode = inputModes.name;
 	jOverlay.finish().fadeIn();
 	jInput.attr('placeholder', 'enter new username...');
@@ -137,6 +144,7 @@ $("#btn-username").click(function(){
 $("#btn-cancel").click(resetInput);
 
 $("#btn-begin").click(function(){
+	focus();
 	$(this).finish().fadeOut("fast");
 	socket.emit("begin");
 })
@@ -191,11 +199,13 @@ function resetDisplay() {
 
 socket.on("reconnect", function(){
 	console.log("reconnected!");
-	socket.emit("leave room");
+	socket.disconnect();
+	location.reload(true);
+	//socket.emit("leave room");
 	// Because of this, when the server is killed,
 	// bizzare things happen
 	// (hands don't show up)
-	socket.emit("join room", room);
+	//socket.emit("join room", room);
 	// TODO: handle continue
 	// this is very broken atm
 })
@@ -336,11 +346,20 @@ function displayCard(card, id) {
 	var y = (Math.random()*4)-2;
 	var transform = "transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px); -webkit-transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px); -moz-transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px)";
 	var draggable = false;
-	if ($("#" + id).hasClass("user") || $("#" + id).hasClass("deck")) draggable = true;
-	return "<li class='card " + card.colour + "' id='" + card.id + "' draggable=" + draggable + " ondragstart='dragCard(event)' style='" + transform + "'>" + card.str + "</li>";
+	var onClick = "";
+	if ($("#" + id).hasClass("user") || $("#" + id).hasClass("deck")) {
+		draggable = true;
+		onClick = "' onclick='clickCard(event)";
+	}
+	return "<li class='card " + card.colour + "' id='" + card.id + onClick + "' draggable=" + draggable + " ondragstart='dragCard(event)' style='" + transform + "'>" + card.str + "</li>";
 }
-
+// Fixes touch screen drags (I think)
 window.addEventListener('touchmove', function() {})
+
+function clickCard(event){
+	console.log("clicked card")
+	socket.emit("play card", {cardID: event.target.id, origin: event.path[3].id});
+}
 
 ///// Drag and drop functionality
 function dragCard(event){
@@ -377,6 +396,7 @@ function dropCard(event){
 	socket.emit("play card", {cardID: data[0], origin: data[1], destination: destination});
 	// server handles the rest.
 	console.log("dropped")
+	focus();
 }
 
 

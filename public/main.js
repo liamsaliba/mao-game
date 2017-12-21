@@ -192,6 +192,9 @@ function resetDisplay() {
 socket.on("reconnect", function(){
 	console.log("reconnected!");
 	socket.emit("leave room");
+	// Because of this, when the server is killed,
+	// bizzare things happen
+	// (hands don't show up)
 	socket.emit("join room", room);
 	// TODO: handle continue
 	// this is very broken atm

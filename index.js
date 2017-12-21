@@ -100,7 +100,7 @@ const DISPLAY = {default: "", back: "back", alternate: "altuser", pile: "pile", 
 // server start calls
 function init() {
 	setTimeout(function(){
-		//refreshClients();
+		refreshClients();
 	}, 1000); // connected clients have time to reconnect before reloading DEBUG ENABLED
 	rooms = {};
 	i("Server initialised.")
@@ -137,6 +137,12 @@ class Room {
 		 * bizzare behaviour, don't do it. */
 	}
 
+	checkBegin() {
+		// Show play button if enough players are ready.
+		if(Object.keys(this.users).length > 1 && !this.game.isPlaying)
+			io.in(this.id).emit("show begin");
+	}
+
 	reset() {
 		this.game = new MaoGame(this.id);
 		Object.keys(this.users).forEach(function(userID, index) {
@@ -147,6 +153,7 @@ class Room {
 		Object.keys(rooms[this.id].users).forEach(function(userID, index) {
 			this.game.displayTable(this.users[userID].socket);
 		}, this);
+		this.checkBegin();
 	}
 
 	removeUser(userID) {
@@ -267,12 +274,13 @@ io.on('connection', (socket) => {
 		// This method and subsequent methods are applied to both room[roomID].users[socket.id] and socket.user
 		socket.user.joinRoom();
 		l("User added to room.", roomID, socket.id);
-		
+
 		// Show play button if enough players are ready.
-		if(Object.keys(rooms[socket.roomID].users).length > 1)
+		if(Object.keys(rooms[socket.roomID].users).length > 1 && !rooms[socket.roomID].game.isPlaying)
 			io.in(socket.roomID).emit("show begin");
 		// Push user count to all clients
 		io.in(roomID).emit("user count", Object.keys(rooms[roomID].users).length);
+		rooms[roomID].checkBegin();
 	});
 
 	// Handle messages from textbox
@@ -395,13 +403,13 @@ io.on('connection', (socket) => {
 	});
 
 	socket.on("leave room", function() {
-		l("Leaving room...", socket.roomID, socket.id)
+		l("Leave room...", socket.roomID, socket.id)
 		if(socket.roomID !== "undefined"){
 			socket.leave(socket.roomID);
 			leaveRoom(socket);
 			socket.user.reset();
 		}
-		l("Left room.", socket.roomID, socket.id);
+		l("Leave room.", socket.roomID, socket.id);
 		socket.roomID = undefined;
 	});
 

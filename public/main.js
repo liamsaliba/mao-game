@@ -339,7 +339,7 @@ socket.on("display move card", function(data){
 	}, 50)
 
 	$("#" + data.destination + " .cardstack").prepend(displayCard(data.card, data.destination));
-	$card2 = $("#" + data.destination + " #" + data.cardID);
+	var $card2 = $("#" + data.destination + " #" + data.cardID);
 	$card2.hide();
 
 	// when animation has completed

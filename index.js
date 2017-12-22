@@ -241,7 +241,8 @@ class User {
 	}
 
 	takePenalty(penalty){
-		this.moveCard(rooms[this.roomID].game.deck.cards[0], "deck", this.id, true);
+		l("Taking penalty", this.roomID, this.id)
+		this.moveCard(rooms[this.roomID].game.deck.cards[0], "cardstack-deck", "cardstack-" + this.id, true);
 		this.emitPenalty(penalty);
 	}
 
@@ -333,6 +334,7 @@ class User {
 	}
 
 	moveCard(movingCard, origin, destination, animateSelf){
+		l("Moving card " + movingCard + " from " + origin + " to " + destination, this.roomID, this.id)
 		var cardID = movingCard.id;
 		var cardInfo = {origin: origin, destination: destination, cardID: cardID, card: movingCard.toDisplay(true)};
 		// Display actual card if pile

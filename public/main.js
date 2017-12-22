@@ -323,30 +323,29 @@ socket.on("rename user", function(data){
 
 
 socket.on("display move card", function(data){
-	var target = document.getElementById(data.destination)
-	var positionInfo = target.getBoundingClientRect();
-	var xT = target.offsetLeft + positionInfo.width/2;
-	var yT = target.offsetTop + positionInfo.height/2;
-	var element = document.getElementById(data.cardID);
-	element.classList.add('animated')
-	var xE = element.offsetLeft;
-	var yE = element.offsetTop;
-	// set elements position to their position for smooth animation
-	element.style.left = xE + 'px';
-	element.style.top = yE + 'px';
-	element.style.opacity = 1;
+	var $target = $("#" + data.destination);
+	var $card = $("#" + data.origin + " #" + data.cardID);
+
+	var xT = $target.offset().left + $target.width() / 2 - $card.width() / 2;
+	var yT = $target.offset().top + $target.height() / 2 - $card.height() / 2;
+
+	$card.addClass('animated');
+	var xE = $card.offset().left;
+	var yE = $card.offset().top;
+	// Initial conditions
+	$card.detach().appendTo("#animation").css({"left": xE, "top": yE, "opacity": 1});
 	setTimeout(function(){
-		element.style.left = xT + 'px';
-		element.style.top = yT + 'px';
-		element.style.opacity = 0;
+		$card.css({"left": xT, "top": yT, "opacity": 0});
 	}, 50)
 
+	$("#" + data.destination + " .cardstack").prepend(displayCard(data.card, data.destination));
+	$card2 = $("#" + data.destination + " #" + data.cardID);
+	$card2.hide();
+
 	// when animation has completed
-	var $card = $("#" + data.cardID);
 	$card.one("webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend", function(e) {
-		element.classList.remove('animated');
 		$card.remove();
-		$("#" + data.destination + " .cardstack").prepend(displayCard(data.card, data.destination));
+		$card2.fadeIn("fast");
 	});
 })
 

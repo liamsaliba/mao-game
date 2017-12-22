@@ -50,6 +50,18 @@ main {
 	z-index: 9;
 }
 
+#animation {
+	/* ignore clicks. */
+	pointer-events: none;
+	z-index: 7;
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: 100%;
+	overflow: hidden;
+}
+
 #overlay, #output {
 	display: none;
 	background-color: #ffffffee;
@@ -269,6 +281,7 @@ nav li {
 	-webkit-box-shadow: 0 0 3px #999;
 	box-shadow: 0 0 3px #999;
 	margin-right: -0.5rem;
+	transition: all 0.2s ease-out;
 }
 
 /* small hands */
@@ -306,7 +319,7 @@ nav li {
 	color: black;
 }
 /* card back */
-.back .card, .altuser .card, .deck .card, #btn-card {
+.back .card, .altuser .card, .deck .card, #btn-card, #animation .card {
 	/* set background image */
 	color: transparent;
 	background: url(http://cdn.shopify.com/s/files/1/0200/7616/products/playing-cards-bicycle-rider-back-2_grande.png?v=1494193481);

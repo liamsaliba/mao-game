@@ -334,18 +334,23 @@ class User {
 
 	moveCard(movingCard, origin, destination, animateSelf){
 		var cardID = movingCard.id;
-		var displayCard = movingCard.toDisplay(true);
+		var cardInfo = {origin: origin, destination: destination, cardID: cardID, card: movingCard.toDisplay(true)};
+		// Display actual card if pile
 		if(destination == "cardstack-pile")
-			displayCard = movingCard.toDisplay();
-		var cardInfo = {origin: origin, destination: destination, cardID: cardID, card: displayCard};
-		if(animateSelf){
-			io.in(this.roomID).emit("display move card", cardInfo);
-		} else {
-			this.socket.to(this.roomID).emit("display move card", cardInfo);
-			// not animated for self
+			cardInfo.card = movingCard.toDisplay();
+		// Display to other players
+		this.socket.to(this.roomID).emit("display move card", cardInfo);
+		// Display actual card if own hand
+		if(destination == "cardstack-" + this.id);
+			cardInfo.card = movingCard.toDisplay();
+
+		if(animateSelf){ // Display as animation
+			this.socket.emit("display move card", cardInfo);
+		} else { // Display without animation
 			this.socket.emit("display remove card", {id: origin, cardID: cardID});
 			this.socket.emit("display card top", {id: destination, card: movingCard.toDisplay()});
 		}
+		// Actual backend stuff (since above was only display)
 		var originStack = rooms[this.roomID].findStack(origin.replace("cardstack-", ""));
 		var destinationStack = rooms[this.roomID].findStack(destination.replace("cardstack-", ""));
 		

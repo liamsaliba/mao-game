@@ -444,3 +444,8 @@ h1, h2, h3 {
             user-select: none; /* Non-prefixed version, currently
                                   supported by Chrome and Opera */
 }
+
+.animated {
+	position: absolute;
+  	transition: left 0.2s ease-out, top 0.2s ease-out, opacity 0.2s ease-out;
+}

@@ -321,10 +321,33 @@ socket.on("rename user", function(data){
 	$("#" + data.id + " .cardstack-title").html(data.name);
 })
 
+
 socket.on("display move card", function(data){
-	var card = $("#" + data.origin + " #" + data.cardID).remove();
-	//$("#" + data.destination + " .cardstack").prepend(card);
-	$("#" + data.destination + " .cardstack").prepend(displayCard(data.card, data.destination));
+	var target = document.getElementById(data.destination)
+	var positionInfo = target.getBoundingClientRect();
+	var xT = target.offsetLeft + positionInfo.width/2;
+	var yT = target.offsetTop + positionInfo.height/2;
+	var element = document.getElementById(data.cardID);
+	element.classList.add('animated')
+	var xE = element.offsetLeft;
+	var yE = element.offsetTop;
+	// set elements position to their position for smooth animation
+	element.style.left = xE + 'px';
+	element.style.top = yE + 'px';
+	element.style.opacity = 1;
+	setTimeout(function(){
+		element.style.left = xT + 'px';
+		element.style.top = yT + 'px';
+		element.style.opacity = 0;
+	}, 50)
+
+	// when animation has completed
+	var $card = $("#" + data.cardID);
+	$card.one("webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend", function(e) {
+		element.classList.remove('animated');
+		$card.remove();
+		$("#" + data.destination + " .cardstack").prepend(displayCard(data.card, data.destination));
+	});
 })
 
 socket.on("display remove card", function(data) {
@@ -362,8 +385,8 @@ function displayCard(card, id) {
 window.addEventListener('touchmove', function() {})
 
 function clickCard(event){
-	console.log("clicked card")
 	socket.emit("play card", {cardID: event.target.id, origin: event.path[3].id});
+	focus();
 }
 
 ///// Drag and drop functionality
@@ -372,7 +395,7 @@ function dragCard(event){
 	event.dataTransfer.setData("text\\plain", event.target.id + ";" + event.path[3].id);
 	event.dataTransfer.dropEffect = "move";
 	setTimeout(function() {event.target.style.opacity = .01}, 10);
-	console.log("dragging")
+	//console.log("dragging")
 }
 
 // Displays drop cursor
@@ -380,13 +403,13 @@ function allowDrop(event) {
 	event.preventDefault(); // data/elements cannot be dropped in other elements by default
 	// Set the dropEffect to move
  	event.dataTransfer.dropEffect = "move"
- 	console.log("allow drop")
+ 	//console.log("allow drop")
 }
 
 // Reset opacity on cancel / mistake
 document.addEventListener("dragend", function(event){
 	event.target.style.opacity = 1;
-	console.log("dragend")
+	//console.log("dragend")
 })
 
 function dropCard(event){
@@ -400,7 +423,7 @@ function dropCard(event){
 
 	socket.emit("move card", {cardID: data[0], origin: data[1], destination: destination});
 	// server handles the rest.
-	console.log("dropped")
+	//console.log("dropped")
 	focus();
 }
 

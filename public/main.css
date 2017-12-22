@@ -357,6 +357,11 @@ nav li {
 	max-width: 30rem;
 	overflow-x: hidden;
 }
+.deck .cardstack-box {
+	overflow-x: hidden;
+	/* Why would the deck need to scroll? */
+}
+
 /* grabbable cards */
 .deck .card, .user .card {
 	cursor: move;

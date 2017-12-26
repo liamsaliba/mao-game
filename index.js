@@ -803,7 +803,7 @@ class Card {
 	}
 }
 
-const PENALTY = {outOfTurn: "Penalty for playing out of turn!", invalidCard: "Penalty for playing out of suit!"};
+const PENALTY = {outOfTurn: "Penalty for playing out of turn!", invalidCard: "Penalty for bad play!"};
 
 class MaoGame {
 	constructor(roomID) {

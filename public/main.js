@@ -343,10 +343,21 @@ socket.on("display move card", function(data){
 	$card2.hide();
 
 	// when animation has completed
+	// transitionend does not fire when tab is
+	// out of focus.
+	var hasFired = false;
 	$card.one("webkitTransitionEnd otransitionend oTransitionEnd msTransitionEnd transitionend", function(e) {
 		$card.remove();
 		$card2.fadeIn("fast");
+		hasFired = true;
 	});
+
+	setTimeout(function(){
+		if(!hasFired){
+			$card.remove();
+			$card2.fadeIn("fast");
+		}
+	}, 1000);
 })
 
 socket.on("display remove card", function(data) {

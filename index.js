@@ -803,7 +803,7 @@ class Card {
 	}
 }
 
-const PENALTY = {outOfTurn: "Penalty for playing out of turn!", invalidCard: "Penalty for bad play!"};
+const PENALTY = {outOfTurn: "Penalty for playing out of turn!", invalidCard: "Penalty for bad play!", timeOut: "Penalty for taking too long!"};
 
 class MaoGame {
 	constructor(roomID) {
@@ -852,7 +852,19 @@ class MaoGame {
 	nextTurn() {
 		// move played user to bottom of queue
 		this.queue.push(this.queue.shift());
-		l("Next turn -> " + this.turn, this.roomID)	
+		l("Next turn -> " + this.turn, this.roomID);
+		var rand = Math.floor(Math.random()*10000);
+		l("Timer set - " + rand)
+		clearTimeout(this.timer);
+		this.timer = setTimeout((function(){
+			try {
+				rooms[this.roomID].users[this.turn].takePenalty(PENALTY.timeOut);
+				l("Out of time! - " + rand);
+				this.nextTurn();
+			} catch(err){
+
+			}
+		}.bind(this)), 10000);
 	}
 
 	get turn() {
@@ -925,6 +937,10 @@ class MaoGame {
 		return PENALTY.invalidCard;
 	}
 }
+
+
+
+
 var RULES = {};
 
 // much of this is temporary.

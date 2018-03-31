@@ -9,6 +9,7 @@ function getCookie(name) {
   if (parts.length == 2) return parts.pop().split(";").shift();
 }
 
+const jOverlay = $("#overlay");
 const eInput = document.getElementById("input");
 
 const SEL_UNSELECTED = -1;
@@ -83,6 +84,7 @@ function resetInput() {
 	eInput.value = "";
 	eInput.placeholder = "chat";
 	jOverlay.finish().fadeOut("fast");
+	eInput.focus();
 }
 
 
@@ -137,8 +139,6 @@ $("#btn-theme").click(function(){
 	blackTheme = !blackTheme;
 	setTheme();
 });
-
-const jOverlay = $("#overlay");
 
 $("#btn-room").click(function(){
 	eInput.focus();

@@ -2,76 +2,92 @@ var commandHistory = ["begin"]
 var blackTheme = (getCookie("theme") == "true");
 setTheme();
 
-const jInput = $("#input")
-const jOverlay = $("#overlay");
-
-function getCookie(cname) {
-    var name = cname + "=";
-    var ca = document.cookie.split(';');
-    for(var i=0; i<ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0)==' ') c = c.substring(1);
-        if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
-    }
-    return "";
+// gets key from cookie
+function getCookie(name) {
+  var value = "; " + document.cookie;
+  var parts = value.split("; " + name + "=");
+  if (parts.length == 2) return parts.pop().split(";").shift();
 }
 
-var selectionIndex = -1; // for command selection
-const inputModes = {default: 0, room: 1, name: 2}
-var inputMode = 0;
-resetInput();
-jInput.keyup(function(e){
-	if (inputMode == inputModes.default){
-		if (e.keyCode == 27) { // esc
-			jInput.val("");
-			selectionIndex = -1; // reset command selection
-		} else if (e.keyCode == 38) { // up arrow
-			if(selectionIndex < commandHistory.length-1)
-				selectionIndex++;
-			jInput.val(commandHistory[selectionIndex]);
-		} else if (e.keyCode == 40) { // down arrow
-			if(selectionIndex > -1){
-				selectionIndex--;
-				jInput.val(commandHistory[selectionIndex]);
-			} else {
-				jInput.val("");
-			}
-		} else if (e.keyCode == 13) { // enter
-			e.preventDefault();
-			if(jInput.val() !== ""){
-				commandHistory.unshift(jInput.val()); // add command to history
-				socket.emit("command", commandHistory[0]);
-				jInput.val("");
-			}
-		} else if (e.keyCode in []){return} // cancel if ctrl, shift, etc
-	} else if (e.keyCode == 27){ // esc
-		resetInput();
-	} else if (e.keyCode == 13){ // enter
-		e.preventDefault()
-		if (inputMode == inputModes.room){
-			socket.emit("leave room");
-			room = jInput.val();
-			window.history.pushState(room, "mao - " + room, "/room/" + room);
-			console.log("attempted to join room, " + room);
-			socket.emit("join room", room);
-		} else if (inputMode == inputModes.name){
-			socket.emit("set username", jInput.val());
-		}
-		resetInput()
-	}
-	
-	console.log("key: " + e.keyCode);
+const eInput = document.getElementById("input");
 
-});
+const SEL_UNSELECTED = -1;
+var inputSelectIndex = SEL_UNSELECTED;
+
+const INPUTMODES = {CHAT: 0, ROOM: 1, NAME: 2}
+var inputMode = INPUTMODES.CHAT;
+
+resetInput();
+eInput.addEventListener("keydown", function(event){
+	if (event.defaultPrevented) {
+    	return; // Do nothing if the event was already processed
+  	}
+  	switch (event.key){
+  		case "Escape":
+  			resetInput();
+  			break;
+		case "ArrowUp":
+			if (inputMode == INPUTMODES.CHAT){
+				if(inputSelectIndex < commandHistory.length-1){
+					inputSelectIndex++;
+					eInput.value = commandHistory[inputSelectIndex];
+				}
+			}
+			break;
+		case "ArrowDown":
+			if (inputMode == INPUTMODES.CHAT){
+				// Move command selection down (unless we're at the bottom)
+				if(inputSelectIndex > SEL_UNSELECTED){
+					inputSelectIndex--;
+					eInput.value = commandHistory[inputSelectIndex];
+				} else {
+					// Nothing selected, so reset (in chat mode, so soft reset)
+					eInput.value = "";
+				}
+			}
+			break;
+		case "Enter":
+			switch (inputMode){
+				case INPUTMODES.CHAT:
+					if(eInput.value !== ""){
+						// add command to history
+						commandHistory.unshift(eInput.value);
+						socket.emit("command", commandHistory[0]);
+						eInput.value = "";
+					}
+					break;
+				case INPUTMODES.ROOM:
+					socket.emit("leave room");
+					room = eInput.value;
+					window.history.pushState(room, "mao - " + room, "/room/" + room);
+					console.log("attempted to join room, " + room);
+					socket.emit("join room", room);
+					break;
+				case INPUTMODES.NAME:
+					socket.emit("set username", eInput.value);
+					break;
+			}
+			resetInput();
+			break;
+		default:
+			return;
+  	}
+
+  	// Cancel the default action to avoid it being handled twice
+  	event.preventDefault();
+}, true); // useCapture
 
 function resetInput() {
-	selectionIndex = -1;
-	jInput.val("");
-	inputMode = 0;
+	inputSelectIndex = SEL_UNSELECTED;
+	inputMode = INPUTMODES.CHAT;
+	eInput.value = "";
+	eInput.placeholder = "chat";
 	jOverlay.finish().fadeOut("fast");
-	jInput.attr('placeholder', 'chit chat');
 }
 
+
+
+// DEPRECATED
 function output2(str, format) {
 	if(format == FORMAT.IMPORTANT)
 		$("#output").append("<li class='animated infinite pulse'>" + str + "</li>");
@@ -91,60 +107,57 @@ function output(data){
 		//	$(body)
 		//	$(body).css({"background": "red"}).delay
 		}
-
 	}
 
 	$("#messages").append("<li>" + data.name + " <span class='message-body " + data.format + "'>" + data.message + "</span></li>");
 	$("#cardstack-" + data.id + " .cardstack-message").finish().fadeIn("fast").html("<span class='message-body " + data.format + "'>" + data.message + "</span>").delay(3000).fadeOut("fast");
 }
 
-function focus() {
-	jInput.focus();
-}
-
 function init() {
-	focus();
+	eInput.focus();
 }
 
 $("main").click(function(){
-	focus();
+	eInput.focus();
 	$("nav").slideUp();
 });
 
 $("#btn-settings").click(function(){
-	focus();
+	eInput.focus();
 	$("nav").slideDown();
 });
 
 $("#btn-close-settings").click(function(){
-	focus();
+	eInput.focus();
 	$("nav").slideUp();
 });
 
 $("#btn-theme").click(function(){
-	focus();
+	eInput.focus();
 	blackTheme = !blackTheme;
 	setTheme();
 });
 
+const jOverlay = $("#overlay");
+
 $("#btn-room").click(function(){
-	focus();
-	inputMode = inputModes.room;
+	eInput.focus();
+	eInput.placeholder = "enter room...";
+	inputMode = INPUTMODES.room;
 	jOverlay.finish().fadeIn();
-	jInput.attr('placeholder', 'enter room...');
 });
 
 $("#btn-username").click(function(){
-	focus();
-	inputMode = inputModes.name;
+	eInput.focus();
+	eInput.placeholder = "enter username...";
+	inputMode = INPUTMODES.name;
 	jOverlay.finish().fadeIn();
-	jInput.attr('placeholder', 'enter new username...');
 });
 
 $("#btn-cancel").click(resetInput);
 
 $("#btn-begin").click(function(){
-	focus();
+	eInput.focus();
 	$(this).finish().fadeOut("fast");
 	socket.emit("begin");
 })
@@ -389,7 +402,7 @@ window.addEventListener('touchmove', function() {})
 
 function clickCard(event){
 	socket.emit("play card", {cardID: event.target.id, origin: event.path[3].id});
-	focus();
+	eInput.focus();
 }
 
 ///// Drag and drop functionality
@@ -427,7 +440,7 @@ function dropCard(event){
 	socket.emit("move card", {cardID: data[0], origin: data[1], destination: destination});
 	// server handles the rest.
 	//console.log("dropped")
-	focus();
+	eInput.focus();
 }
 
 
@@ -442,4 +455,14 @@ function setTheme() {
 		$("#btn-theme").html("Dark Theme")
 	}
 	document.cookie = ("theme=" + blackTheme)
+}
+
+function fadeIn(el){
+	el.classList.add("fade");
+	el.classList.replace("hide", "show");
+}
+
+function fadeOut(el){
+	el.classList.add("fade");
+	el.classList.replace("show", "hide");
 }

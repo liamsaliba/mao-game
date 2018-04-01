@@ -1,5 +1,5 @@
 * {
-	font-family: "Helvetica", "Arial", serif;
+	font-family: "Nanum Gothic", "Helvetica", "Arial", sans-serif;
 	-webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-box-sizing: border-box;
@@ -322,7 +322,7 @@ nav li {
 .back .card, .altuser .card, .deck .card, #btn-card, #animation .card {
 	/* set background image */
 	color: transparent;
-	background: url(http://cdn.shopify.com/s/files/1/0200/7616/products/playing-cards-bicycle-rider-back-2_grande.png?v=1494193481);
+	background: url(/cards/back.png);
 	background-size: cover;
 	background-position: center;
 }

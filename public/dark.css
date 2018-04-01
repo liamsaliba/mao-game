@@ -1,10 +1,10 @@
 body {
-	background: #333;
+	background-color: #333;
 	color: white;
 }
 
 #input {
-	background: #111;
+	background-color: #111;
 	border-bottom: 2px #888 solid;
 }
 
@@ -13,7 +13,7 @@ body {
 }
 
 .card {
-	background: #eee;
+	background-color: #eee;
 }
 
 input {

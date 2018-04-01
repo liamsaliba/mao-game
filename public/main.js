@@ -38,11 +38,12 @@ eInput.addEventListener("keydown", function(event){
 		case "ArrowDown":
 			if (inputMode == INPUTMODES.CHAT){
 				// Move command selection down (unless we're at the bottom)
+				inputSelectIndex--;
 				if(inputSelectIndex > SEL_UNSELECTED){
-					inputSelectIndex--;
 					eInput.value = commandHistory[inputSelectIndex];
 				} else {
 					// Nothing selected, so reset (in chat mode, so soft reset)
+					inputSelectIndex = SEL_UNSELECTED;
 					eInput.value = "";
 				}
 			}
@@ -197,7 +198,7 @@ if(window.location.pathname.slice(0, 6) == "/room/")
 socket.on("connect", function() {
 	$("#connection-info").addClass("connected");
 	socket.emit("join room", room);
-	try{
+	try{ // Mobile theme colour
 		$('meta[name=theme-color]').attr('content', '#266d26')
 	} catch(e){};
 	$("#info-online").html("connected");
@@ -388,14 +389,15 @@ function displayCard(card, id) {
 	var r = (Math.random()*8)-4;
 	var x = (Math.random()*4)-2;
 	var y = (Math.random()*4)-2;
-	var transform = "transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px); -webkit-transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px); -moz-transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px)";
+	var transform = "transform: rotate("+r+"deg) translate(" + x + "px, " + y + "px);";
+	var background = card.display === undefined ? "" : " background-image: url(/cards/" + card.display + ".png);";
 	var draggable = false;
 	var onClick = "";
 	if ($("#" + id).hasClass("user") || $("#" + id).hasClass("deck")) {
 		draggable = true;
 		onClick = "' onclick='clickCard(event)";
 	}
-	return "<li class='card " + card.colour + "' id='" + card.id + onClick + "' draggable=" + draggable + " ondragstart='dragCard(event)' style='" + transform + "'>" + card.str + "</li>";
+	return "<li class='card' id='" + card.id + onClick + "' draggable=" + draggable + " ondragstart='dragCard(event)' style='" + transform + background + "'></li>";
 }
 // Fixes touch screen drags (I think)
 window.addEventListener('touchmove', function() {})

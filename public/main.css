@@ -267,7 +267,7 @@ nav li {
 .card {
 	border-radius: 0.3rem;
 	border: 1px lightgray solid;
-	background: white;
+	background-color: white;
 	padding: 0.4rem;
 	margin: 3px;
 	display: inline-block;
@@ -318,13 +318,15 @@ nav li {
 .black {
 	color: black;
 }
+.card {
+	background-size: cover;
+	background-position: center;
+}
+
 /* card back */
 .back .card, .altuser .card, .deck .card, #btn-card, #animation .card {
 	/* set background image */
-	color: transparent;
-	background: url(/cards/back.png);
-	background-size: cover;
-	background-position: center;
+	background-image: url(/cards/back.png);
 }
 
 /* bounding box */

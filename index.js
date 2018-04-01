@@ -765,7 +765,6 @@ class Card {
 		this.value = value;
 		this.suit = suit;
 	}
-
 	toString() {
 		return [this.value, this.suit].join(" ");
 	};
@@ -780,9 +779,7 @@ class Card {
 	};
 	// info used to display a specific card
 	toDisplay(hidden) {
-		var colour = this.suit.colour;
-		if(hidden) colour = "red";
-		return {colour: colour, id: this.id, str: this.toDisplayString(hidden)};
+		return {id: this.id, display: hidden ? undefined : this.numID};
 	}
 	// use 14 instead of 13 to ensure Joker gets its own distinct ID.
 	get numID() {

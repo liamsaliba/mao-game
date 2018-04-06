@@ -1,0 +1,47 @@
+Mao rules
+
+On YOUR TURN:
+- YOU Must play within *10* seconds
+  !=> PENALTY(1) - took too long
+
+When playing ANY CARD:
+- YOU Must play a card with a LEGAL SUIT or NUMBER
+  !=> PENALTY(1) - played invalid card
+- YOU Must play in turn (clockwise order)
+  !=> PENALTY(1) - played out of turn
+
+When playing ANY JACK:
+- YOU Must say "jack of [cardsuit] change suit to [newsuit]"
+  !=> PENALTY(1) - did not change the suit with the jack
+
+When playing ANY QUEEN:
+- YOU Must say "the chairwoman has entered"
+  !=> PENALTY(1) - did not anounce the chairwoman's entrance
+-- OTHERS Must say "all hail the chairwoman"
+  !=> PENALTY(1) - did not hail the chairwoman
+
+When playing ANY KING:
+- YOU Must say "the chairman has entered"
+  !=> PENALTY(1) - did not anounce the chairman's entrance
+-- OTHERS Must say "all hail the chairman"
+  !=> PENALTY(1) - did not hail the chairman
+
+When playing ANY SEVEN:
+- YOU Must say "have a nice day"
+  !=> PENALTY(1) - did not say "have a nice day"
+If NEXT PLAYER plays ANY SEVEN:
+- THEY Must say "have a very nice day"
+  !=> PENALTY(1) - did not say "have a very nice day"
+If NOT:
+  => PENALTY(X) - having a nice day [penalised with # cards for # of 7s]
+
+
+
+With ONE CARD LEFT:
+- Must say "uno"
+-- If someone else says uno first => PENALTY(2) - did not say 'uno'
+-- If you say uno for no reason => PENALTY(1) - you don't have one card
+
+If turn you've made leaves you with ZERO CARDS:
+- Must say "here ends the game"
+  !=> PENALTY(1) - did not say 'here ends the game'

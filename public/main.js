@@ -1,4 +1,6 @@
-var commandHistory = ["begin"]
+const HOSTNAME = "/";
+
+var commandHistory = ["begin"];
 var blackTheme = (getCookie("theme") == "true");
 setTheme();
 
@@ -9,7 +11,7 @@ function getCookie(name) {
   if (parts.length == 2) return parts.pop().split(";").shift();
 }
 
-const jOverlay = $("#overlay");
+const $Overlay = $("#overlay");
 const eInput = document.getElementById("input");
 
 const SEL_UNSELECTED = -1;
@@ -84,7 +86,7 @@ function resetInput() {
 	inputMode = INPUTMODES.CHAT;
 	eInput.value = "";
 	eInput.placeholder = "chat";
-	jOverlay.finish().fadeOut("fast");
+	$Overlay.finish().fadeOut("fast");
 	eInput.focus();
 }
 
@@ -145,14 +147,14 @@ $("#btn-room").click(function(){
 	eInput.focus();
 	eInput.placeholder = "enter room...";
 	inputMode = INPUTMODES.room;
-	jOverlay.finish().fadeIn();
+	$Overlay.finish().fadeIn();
 });
 
 $("#btn-username").click(function(){
 	eInput.focus();
 	eInput.placeholder = "enter username...";
 	inputMode = INPUTMODES.name;
-	jOverlay.finish().fadeIn();
+	$Overlay.finish().fadeIn();
 });
 
 $("#btn-cancel").click(resetInput);
@@ -184,21 +186,20 @@ function updateUserCount(count){
 };
 
 var id;
-const socket = io.connect("/");
+// connect to ip address/ hostname when live.
+const socket = io.connect(HOSTNAME);
 
-// get room by URL
 var room = "";
 var cardstacks = [];
-if(window.location.pathname.slice(0, 6) == "/room/")
-	room = window.location.pathname.slice(6);
+
 
 // socket.io debugging
 //localStorage.debug = "*";
 
+// make client reflect that it is connected.
 socket.on("connect", function() {
 	$("#connection-info").addClass("connected");
-	socket.emit("join room", room);
-	try{ // Mobile theme colour
+	try{ // Mobile theme colour - green (connected)
 		$('meta[name=theme-color]').attr('content', '#266d26')
 	} catch(e){};
 	$("#info-online").html("connected");
@@ -215,12 +216,16 @@ socket.on("reconnect", function(){
 	console.log("reconnected!");
 	socket.disconnect();
 	location.reload(true);
-})
+});
 
+// make client reflect that it is connected.
 socket.on("disconnect", function() {
 	$("#connection-info").removeClass("connected");
-	$('meta[name=theme-color').attr('content', '#6d2626')
+	try{
+		$('meta[name=theme-color').attr('content', '#6d2626')
+	} catch(e){};
 	$("#info-online").html("disconnected");
+	$("#info-id").html();
 	updateUserCount();
 });
 
